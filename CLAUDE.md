@@ -21,5 +21,10 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
   `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`, `pagado`
 
+## Link para papás
+- Desde "Ver como papá" → "Compartir con papás" se genera un link `#r=<base64url>` con la boleta de un solo alumno (últimos 6 meses).
+- Los datos viajan dentro del link (el `#` no llega al servidor); quien abre el link solo ve esa boleta, sin el panel.
+- Al leer el link (`leerLink`) siempre validar y limpiar los datos: vienen de afuera.
+
 ## Pendiente a futuro
 - Pasar a Firebase para que cada papá tenga un link fijo de su hijo que se actualice solo.

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Progreso de Inglés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: una columna tipo app de celular (máx 560px); panel de la maestra → ficha editable → boleta para papás */
+:root{
+  --bg:#EEF3FA; --card:#FFFFFF; --ink:#16264A; --muted:#5A6A88; --line:#D8E1EE; --soft:#F5F8FD;
+  --btn:#16264A; --btn-fg:#FFFFFF; --hi:#F5B800; --hi-fg:#2A1F00;
+  --ok:#0E9F8E; --ok-bg:#DDF5F1; --warn:#D9473F; --warn-bg:#FCE4E2;
+  --s1:#EF6A4C; --s2:#12A390; --s3:#3B78E0; --s4:#8B5CF0;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1626; --card:#172238; --ink:#E7EEF9; --muted:#9BABC7; --line:#2A3A58; --soft:#1C2942;
+  --btn:#F5B800; --btn-fg:#1E1600; --hi:#F5B800; --hi-fg:#1E1600;
+  --ok:#3CCBB8; --ok-bg:#123A38; --warn:#FF8279; --warn-bg:#3D1F25;
+  --s1:#FF8A6E; --s2:#3CCBB8; --s3:#6FA0FF; --s4:#B091FF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1626; --card:#172238; --ink:#E7EEF9; --muted:#9BABC7; --line:#2A3A58; --soft:#1C2942;
+  --btn:#F5B800; --btn-fg:#1E1600; --hi:#F5B800; --hi-fg:#1E1600;
+  --ok:#3CCBB8; --ok-bg:#123A38; --warn:#FF8279; --warn-bg:#3D1F25;
+  --s1:#FF8A6E; --s2:#3CCBB8; --s3:#6FA0FF; --s4:#B091FF; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+#app{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:14px 48px;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.1;text-wrap:balance}
+h1{font-size:1.75rem;font-weight:800}
+h2{font-size:1.2rem;font-weight:700}
+.eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.between{justify-content:space-between}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 14px;font-weight:700}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.b-main{background:var(--btn);color:var(--btn-fg)}
+.b-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.b-hi{background:var(--hi);color:var(--hi-fg)}
+.b-danger{background:var(--warn);color:#fff}
+.b-sm{padding:7px 11px;font-size:.85rem;border-radius:10px}
+.back{background:none;padding:6px 0;color:var(--muted);font-weight:700}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--soft);border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
+textarea{min-height:84px;resize:vertical}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:700;color:var(--muted);min-width:0;flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.notice{background:var(--soft);border:1.5px dashed var(--line);border-radius:14px;padding:10px 12px;font-size:.88rem;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+/* resumen */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font-family:var(--display);font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;color:var(--muted);font-weight:700}
+/* lista de alumnos */
+.list{display:flex;flex-direction:column;gap:8px}
+.alumno{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left;color:var(--ink);font-weight:400;width:100%}
+.alumno:hover{border-color:var(--muted)}
+.av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.2rem;color:#fff;flex:none}
+.alumno .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.alumno .name{font-weight:800;font-size:1rem}
+.minibar{display:flex;gap:3px}
+.minibar i{height:6px;flex:1;border-radius:3px;background:var(--line)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.c-lvl{background:var(--hi);color:var(--hi-fg)}
+.c-ok{background:var(--ok-bg);color:var(--ok)}
+.c-warn{background:var(--warn-bg);color:var(--warn)}
+.c-plain{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+/* habilidades editables */
+.skill{display:flex;flex-direction:column;gap:6px}
+.skill .lbl{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+.skill .lbl small{font-weight:700;color:var(--muted)}
+.dots{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.dots button{height:34px;border-radius:9px;background:var(--soft);border:1.5px solid var(--line);padding:0;color:var(--muted);font-weight:800}
+.dots button.on{background:var(--sc);border-color:var(--sc);color:#fff}
+.temas{display:flex;flex-wrap:wrap;gap:6px}
+.temas .chip button{background:none;padding:0 0 0 2px;color:inherit;font-size:.9rem;line-height:1}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:36px;height:36px;padding:0;background:var(--soft);border:1.5px solid var(--line);color:var(--ink);font-size:1.1rem}
+.stepper output{min-width:28px;text-align:center;font-family:var(--display);font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums}
+.toggle{display:flex;background:var(--soft);border:1.5px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.toggle button{flex:1;background:transparent;color:var(--muted);padding:8px}
+.toggle button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.confirm{background:var(--warn-bg);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:700;color:var(--warn)}
+/* boleta para papás */
+.preview-bar{background:var(--hi);color:var(--hi-fg);border-radius:12px;padding:8px 12px;font-weight:800;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.preview-bar button{background:var(--hi-fg);color:var(--hi);padding:6px 10px;font-size:.8rem}
+.hero{background:var(--btn);color:var(--btn-fg);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:auto -40px -60px auto;width:180px;height:180px;border-radius:50%;border:22px solid var(--hi);opacity:.25}
+.hero .who{display:flex;gap:14px;align-items:center;position:relative;z-index:1}
+.hero .av{width:58px;height:58px;font-size:1.6rem;border:3px solid var(--btn-fg)}
+.hero h1{font-size:2rem}
+.hero .sub{opacity:.85;font-weight:700;font-size:.9rem}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;position:relative;z-index:1}
+.ladder div{text-align:center;font-weight:800;font-size:.8rem;padding:7px 2px;border-radius:9px;background:color-mix(in srgb,var(--btn-fg) 14%,transparent)}
+.ladder div.done{background:color-mix(in srgb,var(--btn-fg) 32%,transparent)}
+.ladder div.now{background:var(--hi);color:var(--hi-fg)}
+.pbar{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.pbar i{height:12px;border-radius:6px;background:var(--line)}
+.pbar i.on{background:var(--sc)}
+.delta{font-size:.72rem;font-weight:800;color:var(--ok)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--soft);border-radius:12px;padding:12px}
+.kpi b{font-family:var(--display);font-size:1.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.kpi span{display:block;font-size:.78rem;font-weight:700;color:var(--muted)}
+.stars{display:flex;flex-wrap:wrap;gap:4px}
+.stars svg{width:26px;height:26px}
+.note{background:var(--soft);border-left:4px solid var(--hi);border-radius:4px 12px 12px 4px;padding:12px 14px;font-size:1rem}
+.chart{display:flex;align-items:flex-end;gap:10px;height:120px;padding-top:6px;border-bottom:1.5px solid var(--line)}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;min-width:0}
+.chart .col i{width:100%;max-width:46px;border-radius:8px 8px 3px 3px;background:var(--line)}
+.chart .col.last i{background:var(--hi)}
+.chart .col b{font-size:.78rem;font-variant-numeric:tabular-nums}
+.chart-x{display:flex;gap:10px}
+.chart-x span{flex:1;text-align:center;font-size:.75rem;color:var(--muted);font-weight:700;text-transform:capitalize}
+.foot{text-align:center;font-size:.8rem;color:var(--muted)}
+@media (max-width:380px){.stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.alumno,.dots button{transition:border-color .15s,background .15s}}
+</style>
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const KEY='progreso-ingles-v1';
+const SKILLS=[
+  {k:'speaking',n:'Speaking',es:'Hablar',c:'var(--s1)'},
+  {k:'listening',n:'Listening',es:'Escuchar',c:'var(--s2)'},
+  {k:'reading',n:'Reading',es:'Leer',c:'var(--s3)'},
+  {k:'writing',n:'Writing',es:'Escribir',c:'var(--s4)'}];
+const LEVELS=['Starter','A1','A2','B1'];
+const NIVEL=['','Empezando','En proceso','Bien','Muy bien','Excelente'];
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const COLORS=['#EF6A4C','#12A390','#3B78E0','#8B5CF0','#E0A100','#D6487E','#2E8B57','#6B7FD7'];
+const mesTxt=m=>{const[y,mm]=m.split('-');return MESES[+mm-1]+' '+y};
+const mesCorto=m=>MESES[+m.split('-')[1]-1].slice(0,3);
+const nextMes=m=>{let[y,mm]=m.split('-').map(Number);mm++;if(mm>12){mm=1;y++}return y+'-'+String(mm).padStart(2,'0')};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+function mk(nombre,edad,nivel,base,temas,coment,ci){
+  const meses=['2026-08','2026-09','2026-10'].map((mes,i)=>{
+    const sk={};SKILLS.forEach((s,j)=>sk[s.k]=Math.min(5,Math.max(1,base[j]+(i>=1&&j%2==0?1:0)+(i>=2&&j%2==1?1:0)-(i==0&&j==3?0:0))));
+    return {mes,...sk,asist:[7,8,6][i]+(base[0]>2?1:0),clases:8,tareas:[5,6,7][i]-(base[3]<2?1:0),tareasTot:8,
+      stickers:[3,4,5][i]+(base[1]>2?1:0),temas:temas[i]||[],comentario:i==2?coment:'',pagado:i<2||ci%3!=1};
+  });
+  return {id:uid(),nombre,edad,nivel,color:COLORS[ci%COLORS.length],meses};
+}
+function sample(){
+  return {ejemplo:true,alumnos:[
+    mk('Sofía',7,'Starter',[1,2,1,1],[['Colores','Números 1-10'],['Animales','Saludos'],['La familia','Partes de la cara']],'Sofía ya se presenta sola en inglés: "Hello, my name is Sofía". Practiquen en casa los nombres de la familia.',0),
+    mk('Mateo',8,'Starter',[2,2,1,1],[['Números 1-20'],['Frutas','Colores'],['La casa','Preposiciones in/on']],'Mateo participa mucho. Le cuesta escribir; vamos a reforzar con dictados cortos.',1),
+    mk('Valeria',9,'A1',[2,3,2,2],[['Verbo to be'],['Rutina diaria'],['Días de la semana','Hora']],'Valeria lee con muy buena pronunciación. Este mes subió en Listening.',2),
+    mk('Diego',10,'A1',[2,2,3,2],[['Verbo to be'],['Have / has'],['Comida','Like / don\'t like']],'Diego entrega todas sus tareas. Le sugiero ver caricaturas en inglés con subtítulos.',3),
+    mk('Camila',10,'A1',[3,3,2,2],[['Rutina diaria'],['Ropa','Clima'],['Presente simple']],'Camila habla con mucha seguridad. Su siguiente reto es escribir oraciones completas.',4),
+    mk('Emiliano',12,'A2',[3,3,3,3],[['Pasado simple'],['Verbos irregulares'],['Comparativos']],'Emiliano va muy bien. Ya puede contar qué hizo el fin de semana en inglés.',5),
+    mk('Regina',13,'A2',[3,4,4,3],[['Presente continuo'],['Pasado simple'],['Futuro con going to']],'Regina está lista para empezar temas de nivel B1 el próximo bimestre.',6)
+  ]};
+}
+let data;
+try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!data||!Array.isArray(data.alumnos))data=sample();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}};
+let view={screen:'lista',id:null,confirm:null};
+const app=document.getElementById('app');
+const cur=a=>a.meses[a.meses.length-1];
+const prev=a=>a.meses.length>1?a.meses[a.meses.length-2]:null;
+const prom=m=>SKILLS.reduce((t,s)=>t+m[s.k],0)/SKILLS.length;
+const mesActual=()=>{const ms=data.alumnos.map(a=>cur(a).mes).sort();return ms[ms.length-1]||'2026-10'};
+const find=id=>data.alumnos.find(a=>a.id===id);
+const star=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" fill="${on?'var(--hi)':'var(--line)'}"/></svg>`;
+
+function render(){
+  if(view.screen==='editar'&&find(view.id))app.innerHTML=renderEditar(find(view.id));
+  else if(view.screen==='papas'&&find(view.id))app.innerHTML=renderPapas(find(view.id));
+  else{view.screen='lista';app.innerHTML=renderLista()}
+  window.scrollTo?.(0,0);
+}
+
+function renderLista(){
+  const mes=mesActual(), al=data.alumnos;
+  const pend=al.filter(a=>!cur(a).pagado).length;
+  const asis=al.length?Math.round(100*al.reduce((t,a)=>t+cur(a).asist/(cur(a).clases||1),0)/al.length):0;
+  return `
+  <header class="row between">
+    <div><div class="eyebrow">Panel de la maestra</div><h1>Clases de Inglés</h1></div>
+    <span class="chip c-plain" style="text-transform:capitalize">${mesTxt(mes)}</span>
+  </header>
+  ${data.ejemplo?`<div class="notice"><span>Estos alumnos son <b>de ejemplo</b> para ver cómo se ve.</span>
+    ${view.confirm==='blanco'?`<span class="row"><button class="b-danger b-sm" data-a="blanco-si">Sí, borrar</button><button class="b-ghost b-sm" data-a="cancel">No</button></span>`
+    :`<button class="b-ghost b-sm" data-a="blanco">Empezar en blanco</button>`}</div>`:''}
+  <div class="stats">
+    <div class="stat"><b>${al.length}</b><span>Alumnos</span></div>
+    <div class="stat"><b>${asis}%</b><span>Asistencia</span></div>
+    <div class="stat"><b style="color:${pend?'var(--warn)':'var(--ok)'}">${pend}</b><span>Pagos pendientes</span></div>
+  </div>
+  <div class="list">
+    ${al.map(a=>{const m=cur(a);return `
+    <button class="alumno" data-a="abrir" data-id="${a.id}">
+      <span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+      <span class="info">
+        <span class="row between"><span class="name">${esc(a.nombre)} <span class="muted" style="font-weight:600">· ${a.edad} años</span></span><span class="chip c-lvl">${a.nivel}</span></span>
+        <span class="minibar">${SKILLS.map(s=>`<i style="background:linear-gradient(90deg,${s.c} ${m[s.k]*20}%,var(--line) ${m[s.k]*20}%)"></i>`).join('')}</span>
+        <span class="row" style="gap:6px">
+          <span class="chip ${m.pagado?'c-ok':'c-warn'}">${m.pagado?'Pagado':'Pago pendiente'}</span>
+          <span class="chip c-plain">${m.asist}/${m.clases} clases</span>
+        </span>
+      </span>
+    </button>`}).join('')}
+  </div>
+  <div class="row">
+    <button class="b-main" data-a="nuevo" style="flex:1">Agregar alumno</button>
+    ${view.confirm==='mes'?'':`<button class="b-ghost" data-a="mes" style="flex:1">Iniciar ${MESES[+nextMes(mes).split('-')[1]-1]}</button>`}
+  </div>
+  ${view.confirm==='mes'?`<div class="confirm">¿Cerrar ${mesTxt(mes)} y empezar ${mesTxt(nextMes(mes))}? Lo de este mes queda guardado en el historial.
+    <span class="row"><button class="b-danger b-sm" data-a="mes-si">Sí, iniciar</button><button class="b-ghost b-sm" data-a="cancel">Cancelar</button></span></div>`:''}
+  <p class="foot">Prototipo local · los datos se guardan solo en este dispositivo</p>`;
+}
+
+function renderEditar(a){
+  const m=cur(a);
+  return `
+  <button class="back" data-a="lista">← Todos los alumnos</button>
+  <header class="row between">
+    <div class="row"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+      <div><div class="eyebrow" style="text-transform:none;letter-spacing:.02em">${mesTxt(m.mes)}</div><h1>${esc(a.nombre||'Nuevo alumno')}</h1></div></div>
+    <button class="b-hi" data-a="papas">Ver como papá</button>
+  </header>
+
+  <section class="card">
+    <h2>Datos</h2>
+    <div class="grid2">
+      <label class="f">Nombre<input id="f-nombre" data-f="nombre" value="${esc(a.nombre)}" placeholder="Nombre de pila"></label>
+      <label class="f">Edad<input id="f-edad" data-f="edad" type="number" min="4" max="18" value="${a.edad}"></label>
+    </div>
+    <label class="f">Nivel
+      <select id="f-nivel" data-f="nivel">${LEVELS.map(l=>`<option ${l===a.nivel?'selected':''}>${l}</option>`).join('')}</select>
+    </label>
+  </section>
+
+  <section class="card">
+    <div class="row between"><h2>Habilidades</h2><span class="muted" style="font-size:.8rem">1 = empezando · 5 = excelente</span></div>
+    ${SKILLS.map(s=>`
+    <div class="skill" style="--sc:${s.c}">
+      <div class="lbl"><span>${s.n} <small>· ${s.es}</small></span><small>${NIVEL[m[s.k]]}</small></div>
+      <div class="dots" role="group" aria-label="${s.n}">${[1,2,3,4,5].map(n=>`<button class="${n<=m[s.k]?'on':''}" data-a="skill" data-k="${s.k}" data-v="${n}" aria-label="${s.n} ${n}">${n}</button>`).join('')}</div>
+    </div>`).join('')}
+  </section>
+
+  <section class="card">
+    <h2>Este mes</h2>
+    <div class="grid2">
+      ${stepper('Clases asistidas','asist',m.asist,'de '+m.clases)}
+      ${stepper('Clases del mes','clases',m.clases,'')}
+      ${stepper('Tareas entregadas','tareas',m.tareas,'de '+m.tareasTot)}
+      ${stepper('Tareas dejadas','tareasTot',m.tareasTot,'')}
+    </div>
+    ${stepper('Stickers ganados','stickers',m.stickers,'')}
+  </section>
+
+  <section class="card">
+    <h2>Temas vistos</h2>
+    <div class="temas">${m.temas.length?m.temas.map((t,i)=>`<span class="chip c-plain">${esc(t)}<button data-a="quitar-tema" data-i="${i}" aria-label="Quitar ${esc(t)}">×</button></span>`).join(''):'<span class="muted">Aún no hay temas este mes.</span>'}</div>
+    <form class="row" data-form="tema" style="flex-wrap:nowrap"><input id="f-tema" placeholder="Ej. Verbo to be, Animales…"><button class="b-main" type="submit">Agregar</button></form>
+  </section>
+
+  <section class="card">
+    <h2>Mensaje para los papás</h2>
+    <textarea id="f-coment" data-f="comentario" placeholder="Cómo le fue este mes y qué practicar en casa">${esc(m.comentario)}</textarea>
+  </section>
+
+  <section class="card">
+    <h2>Mensualidad de ${MESES[+m.mes.split('-')[1]-1]}</h2>
+    <div class="toggle"><button class="${m.pagado?'':'on'}" data-a="pago" data-v="0">Pendiente</button><button class="${m.pagado?'on':''}" data-a="pago" data-v="1">Pagada</button></div>
+  </section>
+
+  ${view.confirm==='borrar'?`<div class="confirm">¿Borrar a ${esc(a.nombre)} y todo su historial?<span class="row"><button class="b-danger b-sm" data-a="borrar-si">Sí, borrar</button><button class="b-ghost b-sm" data-a="cancel">Cancelar</button></span></div>`
+  :`<button class="b-ghost" data-a="borrar" style="color:var(--warn)">Borrar alumno</button>`}`;
+}
+function stepper(label,f,v,extra){
+  return `<label class="f">${label}<span class="stepper"><button type="button" data-a="step" data-f="${f}" data-d="-1" aria-label="Menos">−</button><output>${v}</output><button type="button" data-a="step" data-f="${f}" data-d="1" aria-label="Más">+</button><span class="muted" style="font-weight:600">${extra}</span></span></label>`;
+}
+
+function renderPapas(a){
+  const m=cur(a),p=prev(a),li=LEVELS.indexOf(a.nivel);
+  const hist=a.meses.slice(-6);
+  return `
+  <div class="preview-bar"><span>Vista previa: así lo verán los papás</span><button data-a="editar">Volver a editar</button></div>
+  <section class="hero">
+    <div class="who"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+      <div><div class="sub" style="text-transform:capitalize">Reporte de ${mesTxt(m.mes)}</div><h1>${esc(a.nombre)}</h1><div class="sub">${a.edad} años · Clases de Inglés</div></div></div>
+    <div class="ladder">${LEVELS.map((l,i)=>`<div class="${i<li?'done':i===li?'now':''}">${l}</div>`).join('')}</div>
+  </section>
+
+  <section class="card">
+    <h2>Cómo va en cada habilidad</h2>
+    ${SKILLS.map(s=>{const d=p?m[s.k]-p[s.k]:0;return `
+    <div class="skill" style="--sc:${s.c}">
+      <div class="lbl"><span>${s.n} <small>· ${s.es}</small></span><span class="row" style="gap:6px">${d>0?`<span class="delta">▲ subió este mes</span>`:''}<small>${NIVEL[m[s.k]]}</small></span></div>
+      <div class="pbar">${[1,2,3,4,5].map(n=>`<i class="${n<=m[s.k]?'on':''}"></i>`).join('')}</div>
+    </div>`}).join('')}
+  </section>
+
+  <section class="kpis">
+    <div class="kpi"><b>${m.asist}<small class="muted" style="font-size:1rem"> / ${m.clases}</small></b><span>Clases asistidas</span></div>
+    <div class="kpi"><b>${m.tareas}<small class="muted" style="font-size:1rem"> / ${m.tareasTot}</small></b><span>Tareas entregadas</span></div>
+  </section>
+
+  <section class="card">
+    <div class="row between"><h2>Stickers del mes</h2><b style="font-family:var(--display);font-size:1.3rem">${m.stickers}</b></div>
+    <div class="stars">${Array.from({length:Math.max(m.stickers,5)},(_,i)=>star(i<m.stickers)).join('')}</div>
+  </section>
+
+  ${m.temas.length?`<section class="card"><h2>Lo que aprendió</h2><div class="temas">${m.temas.map(t=>`<span class="chip c-plain" style="font-size:.85rem">${esc(t)}</span>`).join('')}</div></section>`:''}
+
+  ${m.comentario?`<section class="card"><h2>Mensaje de la teacher</h2><div class="note">${esc(m.comentario)}</div></section>`:''}
+
+  ${hist.length>1?`<section class="card">
+    <h2>Su avance mes a mes</h2><span class="muted" style="font-size:.82rem;margin-top:-6px">Promedio de las 4 habilidades (de 5)</span>
+    <div class="chart">${hist.map((h,i)=>{const v=prom(h);return `<div class="col ${i===hist.length-1?'last':''}"><b>${v.toFixed(1)}</b><i style="height:${v/5*100}%"></i></div>`}).join('')}</div>
+    <div class="chart-x">${hist.map(h=>`<span>${mesCorto(h.mes)}</span>`).join('')}</div>
+  </section>`:''}
+
+  <section class="card row between" style="flex-direction:row">
+    <span style="font-weight:700">Mensualidad de ${MESES[+m.mes.split('-')[1]-1]}</span>
+    <span class="chip ${m.pagado?'c-ok':'c-warn'}">${m.pagado?'Pagada, gracias':'Pendiente'}</span>
+  </section>
+  <p class="foot">Reporte generado por la teacher</p>`;
+}
+
+app.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;
+  const a=find(view.id), act=b.dataset.a;
+  if(act!=='cancel'&&!['mes','blanco','borrar'].includes(act))view.confirm=null;
+  switch(act){
+    case 'abrir': view={screen:'editar',id:b.dataset.id,confirm:null};break;
+    case 'lista': view={screen:'lista',id:null,confirm:null};break;
+    case 'papas': view.screen='papas';break;
+    case 'editar': view.screen='editar';break;
+    case 'cancel': view.confirm=null;break;
+    case 'blanco': case 'mes': case 'borrar': view.confirm=act;break;
+    case 'blanco-si': data={ejemplo:false,alumnos:[]};save();break;
+    case 'mes-si': {const nm=nextMes(mesActual());data.alumnos.forEach(x=>{const c=cur(x);x.meses.push({...c,mes:nm,asist:0,tareas:0,stickers:0,temas:[],comentario:'',pagado:false})});save();view.confirm=null;break}
+    case 'nuevo': {const n={id:uid(),nombre:'',edad:8,nivel:'Starter',color:COLORS[data.alumnos.length%COLORS.length],
+      meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',pagado:false}]};
+      data.alumnos.push(n);save();view={screen:'editar',id:n.id,confirm:null};break}
+    case 'borrar-si': data.alumnos=data.alumnos.filter(x=>x.id!==view.id);save();view={screen:'lista',id:null,confirm:null};break;
+    case 'skill': cur(a)[b.dataset.k]=+b.dataset.v;save();break;
+    case 'step': {const m=cur(a),f=b.dataset.f;let v=m[f]+ +b.dataset.d;v=Math.max(0,Math.min(f==='stickers'?30:31,v));
+      if(f==='asist')v=Math.min(v,m.clases);if(f==='tareas')v=Math.min(v,m.tareasTot);
+      m[f]=v;if(f==='clases')m.asist=Math.min(m.asist,v);if(f==='tareasTot')m.tareas=Math.min(m.tareas,v);save();break}
+    case 'quitar-tema': cur(a).temas.splice(+b.dataset.i,1);save();break;
+    case 'pago': cur(a).pagado=b.dataset.v==='1';save();break;
+    default: return;
+  }
+  const y=window.scrollY;const keep=['skill','step','quitar-tema','pago','borrar','cancel','mes','blanco'].includes(act);
+  render();if(keep)window.scrollTo?.(0,y);
+});
+app.addEventListener('input',e=>{
+  const f=e.target.dataset.f;const a=find(view.id);if(!f||!a)return;
+  if(f==='comentario')cur(a).comentario=e.target.value;
+  else if(f==='edad')a.edad=+e.target.value||a.edad;
+  else a[f]=e.target.value;
+  if(f==='nombre'){const h=app.querySelector('header h1');if(h)h.textContent=a.nombre||'Nuevo alumno';const av=app.querySelector('header .av');if(av)av.textContent=a.nombre[0]||'?'}
+  save();
+});
+app.addEventListener('submit',e=>{
+  e.preventDefault();const a=find(view.id);const inp=document.getElementById('f-tema');
+  const t=inp&&inp.value.trim();if(!a||!t)return;cur(a).temas.push(t);save();
+  const y=window.scrollY;render();window.scrollTo?.(0,y);document.getElementById('f-tema')?.focus();
+});
+render();
+</script>
+</body>
+</html>

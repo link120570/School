@@ -19,7 +19,8 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 ## Estructura de datos
 - `alumnos[]`: `id`, `token`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
-  `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`, `pagado`
+  `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`
+- La app ya no registra pagos (se quitó `pagado` con migración).
 
 ## Link para papás
 - Desde "Ver como papá" → "Compartir con papás" se genera un link `#r=<base64url>` con la boleta de un solo alumno (últimos 6 meses).

@@ -17,7 +17,7 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 - Nunca subir datos reales de alumnos al repositorio (es público).
 
 ## Estructura de datos
-- `alumnos[]`: `id`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`
+- `alumnos[]`: `id`, `token`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
   `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`, `pagado`
 
@@ -26,5 +26,22 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 - Los datos viajan dentro del link (el `#` no llega al servidor); quien abre el link solo ve esa boleta, sin el panel.
 - Al leer el link (`leerLink`) siempre validar y limpiar los datos: vienen de afuera.
 
-## Pendiente a futuro
-- Pasar a Firebase para que cada papá tenga un link fijo de su hijo que se actualice solo.
+## Links fijos con Firebase
+- Configuración en la constante `FIREBASE` de `index.html` (si es `null`, solo hay links de foto `#r=`).
+- La maestra entra con Google. Cada alumno tiene un `token` aleatorio; su boleta (últimos 6 meses) se sube a
+  Firestore en `boletas/{token}` cada vez que se guarda. El papá abre `#p=<token>` y ve solo esa boleta.
+- Los datos completos siguen en localStorage; Firestore solo guarda las boletas. Con alumnos de ejemplo no se sube nada.
+- Reglas de Firestore (cambiar el correo por el de la maestra):
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /boletas/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if request.auth != null && request.auth.token.email == 'CORREO_DE_LA_MAESTRA'
+                   && request.auth.token.email_verified;
+    }
+  }
+}
+```

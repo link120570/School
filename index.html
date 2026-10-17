@@ -162,14 +162,18 @@ function sample(){
   ]};
 }
 // Link para papás: la boleta de un alumno va dentro del link (#r=...), no se guarda en ningún servidor
+const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,meses:a.meses.slice(-6)});
 function linkPapas(a){
-  const o={nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,meses:a.meses.slice(-6)};
-  const b=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(o)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const b=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(boleta(a))))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   return location.origin+location.pathname+'#r='+b;
 }
 function leerLink(s){
+  try{return limpiar(JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0)))))}
+  catch(e){return false}
+}
+// Los datos de un link o de Firebase vienen de afuera: siempre pasarlos por aquí antes de mostrarlos
+function limpiar(o){
   try{
-    const o=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
     const n=(v,min,max)=>Math.max(min,Math.min(max,Math.round(+v)||0));
     const meses=(Array.isArray(o.meses)?o.meses:[]).filter(m=>/^\d{4}-(0[1-9]|1[0-2])$/.test(m.mes)).map(m=>{
       const r={mes:m.mes,asist:n(m.asist,0,31),clases:n(m.clases,0,31),tareas:n(m.tareas,0,31),tareasTot:n(m.tareasTot,0,31),stickers:n(m.stickers,0,30),
@@ -180,13 +184,54 @@ function leerLink(s){
       color:/^#[0-9a-f]{6}$/i.test(o.color)?o.color:COLORS[0],meses};
   }catch(e){return false}
 }
-const compartido=location.hash.startsWith('#r=')?leerLink(location.hash.slice(3)):null;
+
+// Firebase: links fijos para papás (#p=token). La boleta de cada alumno se guarda en boletas/{token}.
+// Pega aquí la configuración de tu proyecto: {apiKey:'…',authDomain:'…',projectId:'…',appId:'…'}
+const FIREBASE=null;
+const FB_URL='https://www.gstatic.com/firebasejs/10.12.2/';
+let fb=null, syncError=false;
+async function cargarFirebase(){
+  if(!FIREBASE)throw new Error('Sin Firebase');
+  if(!fb){
+    const [app,fs,au]=await Promise.all(['firebase-app.js','firebase-firestore.js','firebase-auth.js'].map(f=>import(FB_URL+f)));
+    const ap=app.initializeApp(FIREBASE);
+    fb={fs,au,db:fs.getFirestore(ap),auth:au.getAuth(ap),user:null};
+  }
+  return fb;
+}
+const docBoleta=t=>fb.fs.doc(fb.db,'boletas',t);
+const linkFijo=a=>location.origin+location.pathname+'#p='+a.token;
+const conLinkFijo=()=>!!fb?.user&&!data.ejemplo;
+const subidos={};let tSync;
+function sincronizar(){
+  clearTimeout(tSync);
+  tSync=setTimeout(async()=>{
+    if(!conLinkFijo())return;
+    const antes=syncError;syncError=false;
+    for(const a of data.alumnos){
+      const j=JSON.stringify(boleta(a));if(subidos[a.token]===j)continue;
+      try{await fb.fs.setDoc(docBoleta(a.token),JSON.parse(j));subidos[a.token]=j}catch(e){syncError=true}
+    }
+    if(antes!==syncError&&view.screen==='lista')render();
+  },1200);
+}
+const tok=()=>{const b=new Uint8Array(15);crypto.getRandomValues(b);return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_')};
+
+// compartido: null = panel de la maestra; 'cargando'; false = link inválido; objeto = boleta a mostrar
+let compartido=null;
+if(location.hash.startsWith('#r='))compartido=leerLink(location.hash.slice(3));
+else if(location.hash.startsWith('#p=')){
+  compartido='cargando';
+  cargarFirebase().then(()=>fb.fs.getDoc(docBoleta(location.hash.slice(3))))
+    .then(d=>{compartido=d.exists()?limpiar(d.data()):false}).catch(()=>{compartido=false}).finally(()=>render());
+}
 addEventListener('hashchange',()=>location.reload());
 
 let data;
 try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!data||!Array.isArray(data.alumnos))data=sample();
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}sincronizar()};
+if(compartido===null&&data.alumnos.some(a=>!a.token)){data.alumnos.forEach(a=>{a.token??=tok()});save()}
 let view={screen:'lista',id:null,confirm:null};
 const app=document.getElementById('app');
 const cur=a=>a.meses[a.meses.length-1];
@@ -197,6 +242,7 @@ const find=id=>data.alumnos.find(a=>a.id===id);
 const star=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" fill="${on?'var(--hi)':'var(--line)'}"/></svg>`;
 
 function render(){
+  if(compartido==='cargando'){app.innerHTML='<p class="foot">Cargando reporte…</p>';return}
   if(compartido!==null){
     document.title=compartido?'Reporte de '+compartido.nombre:'Progreso de Inglés';
     app.innerHTML=compartido?renderPapas(compartido):`<section class="card"><h2>Este link no funciona</h2><p class="muted" style="margin:0">Pídele a la teacher que te lo mande de nuevo.</p></section>`;
@@ -245,7 +291,17 @@ function renderLista(){
   </div>
   ${view.confirm==='mes'?`<div class="confirm">¿Cerrar ${mesTxt(mes)} y empezar ${mesTxt(nextMes(mes))}? Lo de este mes queda guardado en el historial.
     <span class="row"><button class="b-danger b-sm" data-a="mes-si">Sí, iniciar</button><button class="b-ghost b-sm" data-a="cancel">Cancelar</button></span></div>`:''}
-  <p class="foot">Prototipo local · los datos se guardan solo en este dispositivo</p>`;
+  ${FIREBASE?`<section class="card">
+    <div class="row between"><h2>Links fijos para papás</h2>${fb?.user?'<span class="chip c-ok">Activos</span>':''}</div>
+    ${fb?.user?`<span class="muted" style="font-size:.85rem">Conectada como ${esc(fb.user.email)}. Cada cambio que hagas se actualiza solo en el link de cada papá.</span>
+      ${data.ejemplo?'<span class="chip c-warn">Toca "Empezar en blanco" para empezar a subir a tus alumnos</span>':''}
+      ${syncError?'<span class="chip c-warn">No se pudo actualizar. Revisa tu internet.</span>':''}
+      <button class="b-ghost b-sm" data-a="desconectar" style="align-self:flex-start">Desconectar</button>`
+    :`<span class="muted" style="font-size:.85rem">Conéctate con tu cuenta de Google para que cada papá tenga un link que se actualiza solo.</span>
+      ${view.fbError?`<span class="chip c-warn">${esc(view.fbError)}</span>`:''}
+      <button class="b-main" data-a="conectar">Conectar con Google</button>`}
+  </section>`:''}
+  <p class="foot">Los datos se guardan en este dispositivo${conLinkFijo()?' y las boletas en Firebase':''}</p>`;
 }
 
 function renderEditar(a){
@@ -322,7 +378,8 @@ function renderPapas(a){
     <h2>Link para los papás de ${esc(a.nombre)}</h2>
     <input id="f-link" readonly value="${esc(view.link)}">
     <div class="row"><button class="b-main b-sm" data-a="copiar">Copiar link</button>${view.copiado?'<span class="chip c-ok">¡Copiado!</span>':''}</div>
-    <span class="muted" style="font-size:.82rem">Solo muestra la boleta de ${esc(a.nombre)} tal como está hoy. Si cambias algo, manda un link nuevo.</span>
+    <span class="muted" style="font-size:.82rem">${conLinkFijo()?`Link fijo: solo muestra la boleta de ${esc(a.nombre)} y se actualiza solo. Mándalo una vez.`
+      :`Solo muestra la boleta de ${esc(a.nombre)} tal como está hoy. Si cambias algo, manda un link nuevo.`}</span>
   </section>`:''}
   <section class="hero">
     <div class="who"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
@@ -374,20 +431,24 @@ app.addEventListener('click',e=>{
     case 'abrir': view={screen:'editar',id:b.dataset.id,confirm:null};break;
     case 'lista': view={screen:'lista',id:null,confirm:null};break;
     case 'papas': view.screen='papas';view.link=null;break;
-    case 'compartir': view.link=linkPapas(a);view.copiado=false;
+    case 'compartir': view.link=conLinkFijo()?linkFijo(a):linkPapas(a);view.copiado=false;
       navigator.share?.({title:'Reporte de '+a.nombre,text:'Reporte de inglés de '+a.nombre,url:view.link}).catch(()=>{});break;
     case 'copiar': navigator.clipboard?.writeText(view.link).then(()=>{view.copiado=true;const y=window.scrollY;render();window.scrollTo?.(0,y)})
       .catch(()=>document.getElementById('f-link')?.select());
       if(!navigator.clipboard)document.getElementById('f-link')?.select();return;
     case 'editar': view.screen='editar';break;
+    case 'conectar': view.fbError=null;cargarFirebase().then(()=>fb.au.signInWithPopup(fb.auth,new fb.au.GoogleAuthProvider()))
+      .catch(()=>{view.fbError='No se pudo conectar. Intenta de nuevo.';render()});return;
+    case 'desconectar': fb.au.signOut(fb.auth);return;
     case 'cancel': view.confirm=null;break;
     case 'blanco': case 'mes': case 'borrar': view.confirm=act;break;
     case 'blanco-si': data={ejemplo:false,alumnos:[]};save();break;
     case 'mes-si': {const nm=nextMes(mesActual());data.alumnos.forEach(x=>{const c=cur(x);x.meses.push({...c,mes:nm,asist:0,tareas:0,stickers:0,temas:[],comentario:'',pagado:false})});save();view.confirm=null;break}
     case 'nuevo': {const n={id:uid(),nombre:'',edad:8,nivel:'Starter',color:COLORS[data.alumnos.length%COLORS.length],
-      meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',pagado:false}]};
+      token:tok(),meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',pagado:false}]};
       data.alumnos.push(n);save();view={screen:'editar',id:n.id,confirm:null};break}
-    case 'borrar-si': data.alumnos=data.alumnos.filter(x=>x.id!==view.id);save();view={screen:'lista',id:null,confirm:null};break;
+    case 'borrar-si': if(conLinkFijo())fb.fs.deleteDoc(docBoleta(a.token)).catch(()=>{});
+      data.alumnos=data.alumnos.filter(x=>x.id!==view.id);save();view={screen:'lista',id:null,confirm:null};break;
     case 'skill': cur(a)[b.dataset.k]=+b.dataset.v;save();break;
     case 'step': {const m=cur(a),f=b.dataset.f;let v=m[f]+ +b.dataset.d;v=Math.max(0,Math.min(f==='stickers'?30:31,v));
       if(f==='asist')v=Math.min(v,m.clases);if(f==='tareas')v=Math.min(v,m.tareasTot);
@@ -413,6 +474,9 @@ app.addEventListener('submit',e=>{
   const y=window.scrollY;render();window.scrollTo?.(0,y);document.getElementById('f-tema')?.focus();
 });
 render();
+if(FIREBASE&&compartido===null)cargarFirebase().then(()=>fb.au.onAuthStateChanged(fb.auth,u=>{
+  fb.user=u;if(u)sincronizar();if(view.screen!=='editar'){const y=window.scrollY;render();window.scrollTo?.(0,y)}
+})).catch(()=>{});
 </script>
 </body>
 </html>

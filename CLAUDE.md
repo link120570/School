@@ -14,11 +14,13 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 
 ## Privacidad
 - Solo nombre de pila y edad del alumno. Sin fotos, apellidos, escuela ni dirección.
+- En lugar de foto, cada alumno puede escoger un personaje (avatar emoji) y su color.
 - Nunca subir datos reales de alumnos al repositorio (es público).
 
 ## Estructura de datos
 - `alumnos[]`: `id`, `token`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`,
-  `dias[]` ('lun'…'dom'), `horaIni`, `horaFin` (HH:MM)
+  `dias[]` ('lun'…'dom'), `horaIni`, `horaFin` (HH:MM),
+  `avatar` (un emoji de la lista `AVATARES`, o '' para usar la inicial)
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
   `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`,
   `practica` (texto para practicar en casa), `practicaFecha` (AAAA-MM-DD), `meta` (meta para el próximo mes), `lista` ({'AAAA-MM-DD': true/false} del pase de lista)

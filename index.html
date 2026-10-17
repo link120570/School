@@ -72,6 +72,13 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:
 .alumno{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:left;color:var(--ink);font-weight:400;width:100%}
 .alumno:hover{border-color:var(--muted)}
 .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.2rem;color:#fff;flex:none}
+.av.emo{font-size:1.45rem;line-height:1}
+.pick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.pick button{aspect-ratio:1;padding:0;border-radius:12px;background:var(--soft);border:2px solid var(--line);font-size:1.5rem;line-height:1;color:var(--ink);font-family:var(--display);min-width:0}
+.pick button.on{border-color:var(--ink);background:var(--card);box-shadow:0 0 0 2px var(--hi)}
+.colores{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.colores button{aspect-ratio:1;padding:0;border-radius:50%;background:var(--c);border:3px solid transparent;min-width:0}
+.colores button.on{border-color:var(--ink);box-shadow:inset 0 0 0 2px var(--card)}
 .alumno .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
 .alumno .name{font-weight:800;font-size:1rem}
 .minibar{display:flex;gap:3px}
@@ -101,6 +108,7 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:
 .hero::after{content:"";position:absolute;inset:-36px -36px auto auto;width:110px;height:110px;border-radius:50%;border:14px solid var(--hi);opacity:.14}
 .hero .who{display:flex;gap:14px;align-items:center;position:relative;z-index:1}
 .hero .av{width:58px;height:58px;font-size:1.6rem;border:3px solid var(--btn-fg)}
+.hero .av.emo{font-size:2rem}
 .hero h1{font-size:2rem}
 .hero .sub{opacity:.85;font-weight:700;font-size:.9rem}
 .ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;position:relative;z-index:1}
@@ -166,6 +174,10 @@ const cap=t=>t[0].toUpperCase()+t.slice(1);
 const mesCorto=m=>MESES[+m.split('-')[1]-1].slice(0,3);
 const nextMes=m=>{let[y,mm]=m.split('-').map(Number);mm++;if(mm>12){mm=1;y++}return y+'-'+String(mm).padStart(2,'0')};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Personajes que puede elegir cada alumno en lugar de su inicial (sin fotos, por privacidad)
+const AVATARES=['🦊','🐼','🦁','🐯','🐸','🐶','🐱','🐰','🐨','🦄','🐙','🦖','🐢','🐧','🦉','🐝','🦋','🚀','⚽','🎨','🎸','🌟','🌈'];
+const av=a=>AVATARES.includes(a.avatar)?`<span class="av emo" style="background:${a.color}" aria-hidden="true">${a.avatar}</span>`
+  :`<span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>`;
 const uid=()=>Math.random().toString(36).slice(2,9);
 const pad=n=>String(n).padStart(2,'0');
 const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
@@ -192,7 +204,7 @@ function mk(nombre,edad,nivel,base,temas,coment,ci){
       stickers:[3,4,5][i]+(base[1]>2?1:0),temas:temas[i]||[],comentario:i==2?coment:''};
   });
   return {id:uid(),nombre,edad,nivel,color:COLORS[ci%COLORS.length],meses,
-    dias:ci%2?['mar','jue']:['lun','mie'],horaIni:ci<4?'16:00':'17:00',horaFin:ci<4?'17:00':'18:00'};
+    avatar:['🦊','🐼','🦄','🦖','🐱','🚀','🦉'][ci%7],dias:ci%2?['mar','jue']:['lun','mie'],horaIni:ci<4?'16:00':'17:00',horaFin:ci<4?'17:00':'18:00'};
 }
 function sample(){
   return {ejemplo:true,alumnos:[
@@ -206,7 +218,7 @@ function sample(){
   ]};
 }
 // Link para papás: la boleta de un alumno va dentro del link (#r=...), no se guarda en ningún servidor
-const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,dias:a.dias||[],horaIni:a.horaIni||'',horaFin:a.horaFin||'',meses:a.meses.slice(-6).map(({lista,...m})=>m)});
+const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,avatar:a.avatar||'',dias:a.dias||[],horaIni:a.horaIni||'',horaFin:a.horaFin||'',meses:a.meses.slice(-6).map(({lista,...m})=>m)});
 function linkPapas(a){
   const b=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(boleta(a))))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   return location.origin+location.pathname+'#r='+b;
@@ -228,6 +240,7 @@ function limpiar(o){
     return {nombre:String(o.nombre??''),edad:n(o.edad,0,99),nivel:LEVELS.includes(o.nivel)?o.nivel:LEVELS[0],
       color:/^#[0-9a-f]{6}$/i.test(o.color)?o.color:COLORS[0],meses,
       dias:Array.isArray(o.dias)?DIAS.map(d=>d[0]).filter(k=>o.dias.includes(k)):[],
+      avatar:AVATARES.includes(o.avatar)?o.avatar:'',
       horaIni:/^\d{2}:\d{2}$/.test(o.horaIni)?o.horaIni:'',horaFin:/^\d{2}:\d{2}$/.test(o.horaFin)?o.horaFin:''};
   }catch(e){return false}
 }
@@ -279,9 +292,9 @@ let data;
 try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!data||!Array.isArray(data.alumnos))data=sample();
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}sincronizar()};
-// Migraciones: token para links fijos; se quitó el registro de pagos; práctica y pase de lista por mes; días y horario
-if(compartido===null&&data.alumnos.some(a=>!a.token||!a.dias||a.meses.some(m=>'pagado' in m||!m.lista||m.meta==null))){
-  data.alumnos.forEach(a=>{a.token??=tok();a.dias??=[];a.horaIni??='';a.horaFin??='';a.meses.forEach(m=>{delete m.pagado;m.practica??='';m.practicaFecha??='';m.lista??={};m.meta??=''})});save()}
+// Migraciones: token para links fijos; se quitó el registro de pagos; práctica y pase de lista por mes; días y horario; avatar
+if(compartido===null&&data.alumnos.some(a=>!a.token||!a.dias||a.avatar==null||a.meses.some(m=>'pagado' in m||!m.lista||m.meta==null))){
+  data.alumnos.forEach(a=>{a.token??=tok();a.avatar??='';a.dias??=[];a.horaIni??='';a.horaFin??='';a.meses.forEach(m=>{delete m.pagado;m.practica??='';m.practicaFecha??='';m.lista??={};m.meta??=''})});save()}
 let view={screen:'lista',id:null,confirm:null};
 const app=document.getElementById('app');
 const cur=a=>a.meses[a.meses.length-1];
@@ -327,7 +340,7 @@ function renderLista(){
   <div class="list">
     ${al.map(a=>{const m=cur(a);return `
     <button class="alumno" data-a="abrir" data-id="${a.id}">
-      <span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+      ${av(a)}
       <span class="info">
         <span class="row between"><span class="name">${esc(a.nombre)} <span class="muted" style="font-weight:600">· ${a.edad} años</span></span><span class="chip c-lvl">${a.nivel}</span></span>
         <span class="minibar">${SKILLS.map(s=>`<i style="background:linear-gradient(90deg,${s.c} ${m[s.k]*20}%,var(--line) ${m[s.k]*20}%)"></i>`).join('')}</span>
@@ -370,11 +383,11 @@ function renderPase(){
     :'<div class="notice"><span>Nadie tiene clase este día. Si alguien vino, agrégalo abajo.</span></div>'}
   <div class="list">${en.map(a=>`
     <button class="roll ${view.pres[a.id]?'on':''}" data-a="pres" data-id="${a.id}" aria-pressed="${!!view.pres[a.id]}">
-      <span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+      ${av(a)}
       <span class="name">${esc(a.nombre)}</span><span class="st">${view.pres[a.id]?'Vino':'Faltó'}</span>
     </button>`).join('')}</div>
   ${fuera.length?`<span class="eyebrow">Hoy no les toca</span>
-  <div class="list">${fuera.map(a=>`<div class="roll"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+  <div class="list">${fuera.map(a=>`<div class="roll">${av(a)}
     <span class="name">${esc(a.nombre)}</span><button class="b-ghost b-sm" data-a="pres" data-id="${a.id}">+ Vino</button></div>`).join('')}</div>`:''}
   <button class="b-main" data-a="pase-si">Guardar asistencia</button>`;
 }
@@ -386,7 +399,7 @@ function renderEditar(a){
   return `
   <button class="back" data-a="lista">← Todos los alumnos</button>
   <header class="row between">
-    <div class="row"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+    <div class="row">${av(a)}
       <div><div class="eyebrow" style="text-transform:none;letter-spacing:.02em">${cap(mesTxt(m.mes))}</div><h1>${esc(a.nombre||'Nuevo alumno')}</h1></div></div>
     <button class="b-hi" data-a="papas">Ver como papá</button>
   </header>
@@ -400,6 +413,17 @@ function renderEditar(a){
     <label class="f">Nivel
       <select id="f-nivel" data-f="nivel">${LEVELS.map(l=>`<option ${l===a.nivel?'selected':''}>${l}</option>`).join('')}</select>
     </label>
+  </section>
+
+  <section class="card">
+    <h2>Su personaje</h2>
+    <span class="muted" style="font-size:.85rem">Que ${esc(a.nombre||'el alumno')} escoja el suyo. Sale en su boleta.</span>
+    <div class="pick" role="group" aria-label="Personaje">
+      <button class="${AVATARES.includes(a.avatar)?'':'on'}" data-a="avatar" data-v="" aria-label="Usar su inicial">${esc(a.nombre[0]||'?')}</button>
+      ${AVATARES.map(e=>`<button class="${a.avatar===e?'on':''}" data-a="avatar" data-v="${e}">${e}</button>`).join('')}
+    </div>
+    <span class="muted" style="font-size:.85rem;font-weight:700">Color</span>
+    <div class="colores" role="group" aria-label="Color">${COLORS.map(c=>`<button class="${a.color===c?'on':''}" style="--c:${c}" data-a="color" data-v="${c}" aria-label="Color ${c}"></button>`).join('')}</div>
   </section>
 
   <section class="card">
@@ -493,7 +517,7 @@ function renderPapas(a){
       :`Solo muestra la boleta de ${esc(a.nombre)} tal como está hoy. Si cambias algo, manda un link nuevo.`}</span>
   </section>`:''}
   <section class="hero">
-    <div class="who"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+    <div class="who">${av(a)}
       <div><div class="sub">Reporte de ${mesTxt(m.mes)}</div><h1>${esc(a.nombre)}</h1><div class="sub">${a.edad} años · Clases de Inglés</div></div></div>
     <div class="ladder">${LEVELS.map((l,i)=>`<div class="${i<li?'done':i===li?'now':''}">${l}</div>`).join('')}</div>
   </section>
@@ -567,7 +591,7 @@ app.addEventListener('click',e=>{
     case 'blanco-si': data={ejemplo:false,alumnos:[]};save();break;
     case 'mes-si': {const nm=nextMes(mesActual());data.alumnos.forEach(x=>{const c=cur(x);x.meses.push({...c,mes:nm,asist:0,tareas:0,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{},meta:''})});save();view.confirm=null;break}
     case 'nuevo': {const n={id:uid(),nombre:'',edad:8,nivel:'Starter',color:COLORS[data.alumnos.length%COLORS.length],
-      token:tok(),dias:[],horaIni:'',horaFin:'',meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{},meta:''}]};
+      token:tok(),avatar:'',dias:[],horaIni:'',horaFin:'',meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{},meta:''}]};
       data.alumnos.push(n);save();view={screen:'editar',id:n.id,confirm:null};break}
     case 'borrar-si': if(conLinkFijo())fb.fs.deleteDoc(docBoleta(a.token)).catch(()=>{});
       data.alumnos=data.alumnos.filter(x=>x.id!==view.id);save();view={screen:'lista',id:null,confirm:null};break;
@@ -577,6 +601,8 @@ app.addEventListener('click',e=>{
       m[f]=v;if(f==='clases')m.asist=Math.min(m.asist,v);if(f==='tareasTot')m.tareas=Math.min(m.tareas,v);save();break}
     case 'quitar-tema': cur(a).temas.splice(+b.dataset.i,1);save();break;
     case 'dia': {const d=b.dataset.d;a.dias=a.dias.includes(d)?a.dias.filter(x=>x!==d):DIAS.map(x=>x[0]).filter(x=>x===d||a.dias.includes(x));save();break}
+    case 'avatar': a.avatar=b.dataset.v;save();break;
+    case 'color': a.color=b.dataset.v;save();break;
     case 'tema-sug': cur(a).temas.push(b.dataset.t);save();break;
     case 'pase': view={screen:'pase',id:null,confirm:null,fecha:hoy(),pres:presDe(hoy())};break;
     case 'pres': view.pres[b.dataset.id]=!view.pres[b.dataset.id];break;
@@ -587,7 +613,7 @@ app.addEventListener('click',e=>{
       save();view={screen:'lista',id:null,confirm:null,msg:`Asistencia del ${fechaTxt(f)} guardada: vinieron ${n} de ${data.alumnos.filter(x=>view.pres[x.id]!=null).length}.`};break}
     default: return;
   }
-  const y=window.scrollY;const keep=['skill','step','dia','quitar-tema','tema-sug','pres','borrar','cancel','mes','blanco','compartir'].includes(act);
+  const y=window.scrollY;const keep=['skill','step','dia','avatar','color','quitar-tema','tema-sug','pres','borrar','cancel','mes','blanco','compartir'].includes(act);
   render();if(keep)window.scrollTo?.(0,y);
 });
 app.addEventListener('input',e=>{
@@ -598,7 +624,7 @@ app.addEventListener('input',e=>{
   else if(f==='practica'){cur(a).practica=e.target.value;cur(a).practicaFecha=hoy()}
   else if(f==='edad')a.edad=+e.target.value||a.edad;
   else a[f]=e.target.value;
-  if(f==='nombre'){const h=app.querySelector('header h1');if(h)h.textContent=a.nombre||'Nuevo alumno';const av=app.querySelector('header .av');if(av)av.textContent=a.nombre[0]||'?'}
+  if(f==='nombre'){const h=app.querySelector('header h1');if(h)h.textContent=a.nombre||'Nuevo alumno';const el=app.querySelector('header .av:not(.emo)');if(el)el.textContent=a.nombre[0]||'?'}
   save();
 });
 app.addEventListener('submit',e=>{

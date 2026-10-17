@@ -19,10 +19,15 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 ## Estructura de datos
 - `alumnos[]`: `id`, `token`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
-  `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`
+  `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`,
+  `practica` (texto para practicar en casa), `practicaFecha` (AAAA-MM-DD), `lista` ({'AAAA-MM-DD': true/false} del pase de lista)
+- El pase de lista suma o corrige `asist` según la fecha; `lista` no se sube a Firebase.
+- Los logros de la boleta se calculan solos (función `logros`), no se guardan.
 - La app ya no registra pagos (se quitó `pagado` con migración).
 
 ## Link para papás
+- `preview.png` es la imagen que muestra WhatsApp al compartir el link (etiquetas og: en el `<head>`). Es genérica:
+  el `#` no llega al servidor, así que la vista previa no puede llevar el nombre; el nombre va en el texto del mensaje.
 - Desde "Ver como papá" → "Compartir con papás" se genera un link `#r=<base64url>` con la boleta de un solo alumno (últimos 6 meses).
 - Los datos viajan dentro del link (el `#` no llega al servidor); quien abre el link solo ve esa boleta, sin el panel.
 - Al leer el link (`leerLink`) siempre validar y limpiar los datos: vienen de afuera.

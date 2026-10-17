@@ -4,6 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Progreso de Inglés</title>
+<meta name="description" content="Mira el avance de tu hijo en sus clases de inglés.">
+<meta name="theme-color" content="#16264A">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Clases de Inglés">
+<meta property="og:title" content="Reporte de Inglés">
+<meta property="og:description" content="Toca para ver su avance del mes: habilidades, tareas, stickers y logros.">
+<meta property="og:url" content="https://link120570.github.io/School/">
+<meta property="og:image" content="https://link120570.github.io/School/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
 <style>
@@ -113,6 +124,17 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:
 .chart .col b{font-size:.78rem;font-variant-numeric:tabular-nums}
 .chart-x{display:flex;gap:10px}
 .chart-x span{flex:1;text-align:center;font-size:.75rem;color:var(--muted);font-weight:700;text-transform:capitalize}
+.sug{display:flex;flex-wrap:wrap;gap:6px}
+.sug button{background:var(--soft);border:1.5px dashed var(--line);color:var(--ink);font-size:.8rem;padding:5px 10px;border-radius:999px;font-weight:700}
+.roll{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;width:100%;text-align:left;color:var(--ink)}
+.roll .name{flex:1;font-weight:800}
+.roll .st{font-size:.85rem;font-weight:800;padding:6px 12px;border-radius:999px;background:var(--warn-bg);color:var(--warn);min-width:82px;text-align:center}
+.roll.on{border-color:var(--ok)}
+.roll.on .st{background:var(--ok-bg);color:var(--ok)}
+.badges{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.badge{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:12px;padding:10px;font-weight:800;font-size:.85rem;line-height:1.2}
+.badge span:first-child{font-size:1.6rem;line-height:1}
+.practica{background:var(--soft);border-left:4px solid var(--s2);border-radius:4px 12px 12px 4px;padding:12px 14px;font-size:1rem;white-space:pre-line}
 .foot{text-align:center;font-size:.8rem;color:var(--muted)}
 @media (max-width:380px){.stats{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:no-preference){.alumno,.dots button{transition:border-color .15s,background .15s}}
@@ -138,6 +160,15 @@ const mesCorto=m=>MESES[+m.split('-')[1]-1].slice(0,3);
 const nextMes=m=>{let[y,mm]=m.split('-').map(Number);mm++;if(mm>12){mm=1;y++}return y+'-'+String(mm).padStart(2,'0')};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,9);
+const pad=n=>String(n).padStart(2,'0');
+const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const fechaTxt=f=>{const[,mm,dd]=f.split('-');return +dd+' de '+MESES[+mm-1]};
+// Temas sugeridos por nivel (la maestra también ve los que ya ha usado antes)
+const TEMAS={
+  Starter:['Saludos','Colores','Números 1-10','Números 11-20','Animales','La familia','Partes del cuerpo','Frutas','Útiles escolares','Juguetes','Días de la semana','Ropa'],
+  A1:['Verbo to be','Have / has','Rutina diaria','La hora','Comida','Like / don\'t like','Presente simple','Clima','La casa','Preposiciones in/on/under','Can / can\'t','There is / there are'],
+  A2:['Presente continuo','Pasado simple','Verbos irregulares','Comparativos','Superlativos','Futuro con going to','Adverbios de frecuencia','Some / any','Was / were','Contables e incontables'],
+  B1:['Presente perfecto','Futuro con will','First conditional','Should / must','Pasado continuo','Voz pasiva','Phrasal verbs','Relative clauses']};
 
 function mk(nombre,edad,nivel,base,temas,coment,ci){
   const meses=['2026-08','2026-09','2026-10'].map((mes,i)=>{
@@ -159,7 +190,7 @@ function sample(){
   ]};
 }
 // Link para papás: la boleta de un alumno va dentro del link (#r=...), no se guarda en ningún servidor
-const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,meses:a.meses.slice(-6)});
+const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,meses:a.meses.slice(-6).map(({lista,...m})=>m)});
 function linkPapas(a){
   const b=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(boleta(a))))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   return location.origin+location.pathname+'#r='+b;
@@ -174,7 +205,8 @@ function limpiar(o){
     const n=(v,min,max)=>Math.max(min,Math.min(max,Math.round(+v)||0));
     const meses=(Array.isArray(o.meses)?o.meses:[]).filter(m=>/^\d{4}-(0[1-9]|1[0-2])$/.test(m.mes)).map(m=>{
       const r={mes:m.mes,asist:n(m.asist,0,31),clases:n(m.clases,0,31),tareas:n(m.tareas,0,31),tareasTot:n(m.tareasTot,0,31),stickers:n(m.stickers,0,30),
-        temas:Array.isArray(m.temas)?m.temas.map(String):[],comentario:String(m.comentario??'')};
+        temas:Array.isArray(m.temas)?m.temas.map(String):[],comentario:String(m.comentario??''),
+        practica:String(m.practica??''),practicaFecha:/^\d{4}-\d{2}-\d{2}$/.test(m.practicaFecha)?m.practicaFecha:''};
       SKILLS.forEach(k=>r[k.k]=n(m[k.k],1,5));return r});
     if(!meses.length)return false;
     return {nombre:String(o.nombre??''),edad:n(o.edad,0,99),nivel:LEVELS.includes(o.nivel)?o.nivel:LEVELS[0],
@@ -229,9 +261,9 @@ let data;
 try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!data||!Array.isArray(data.alumnos))data=sample();
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}sincronizar()};
-// Migraciones: token para links fijos; se quitó el registro de pagos
-if(compartido===null&&data.alumnos.some(a=>!a.token||a.meses.some(m=>'pagado' in m))){
-  data.alumnos.forEach(a=>{a.token??=tok();a.meses.forEach(m=>{delete m.pagado})});save()}
+// Migraciones: token para links fijos; se quitó el registro de pagos; práctica y pase de lista por mes
+if(compartido===null&&data.alumnos.some(a=>!a.token||a.meses.some(m=>'pagado' in m||!m.lista))){
+  data.alumnos.forEach(a=>{a.token??=tok();a.meses.forEach(m=>{delete m.pagado;m.practica??='';m.practicaFecha??='';m.lista??={}})});save()}
 let view={screen:'lista',id:null,confirm:null};
 const app=document.getElementById('app');
 const cur=a=>a.meses[a.meses.length-1];
@@ -250,6 +282,7 @@ function render(){
   }
   if(view.screen==='editar'&&find(view.id))app.innerHTML=renderEditar(find(view.id));
   else if(view.screen==='papas'&&find(view.id))app.innerHTML=renderPapas(find(view.id));
+  else if(view.screen==='pase')app.innerHTML=renderPase();
   else{view.screen='lista';app.innerHTML=renderLista()}
   window.scrollTo?.(0,0);
 }
@@ -266,6 +299,8 @@ function renderLista(){
   ${data.ejemplo?`<div class="notice"><span>Estos alumnos son <b>de ejemplo</b> para ver cómo se ve.</span>
     ${view.confirm==='blanco'?`<span class="row"><button class="b-danger b-sm" data-a="blanco-si">Sí, borrar</button><button class="b-ghost b-sm" data-a="cancel">No</button></span>`
     :`<button class="b-ghost b-sm" data-a="blanco">Empezar en blanco</button>`}</div>`:''}
+  ${view.msg?`<div class="notice"><span>${esc(view.msg)}</span></div>`:''}
+  ${al.length?`<button class="b-hi" data-a="pase">Pase de lista de hoy${al.every(a=>hoy() in (cur(a).lista||{}))?' ✓':''}</button>`:''}
   <div class="stats">
     <div class="stat"><b>${al.length}</b><span>Alumnos</span></div>
     <div class="stat"><b>${asis}%</b><span>Asistencia</span></div>
@@ -302,6 +337,24 @@ function renderLista(){
   </section>`:''}
   <p class="foot">Los datos se guardan en este dispositivo${conLinkFijo()?' y las boletas en Firebase':''}</p>`;
 }
+
+function renderPase(){
+  const f=view.fecha, ya=data.alumnos.some(a=>f in (cur(a).lista||{}));
+  const n=data.alumnos.filter(a=>view.pres[a.id]).length;
+  return `
+  <button class="back" data-a="lista">← Panel</button>
+  <header><div class="eyebrow">Pase de lista</div><h1>Clase del ${fechaTxt(f)}</h1></header>
+  <label class="f">Fecha de la clase<input type="date" id="f-fecha" data-f="fecha" value="${f}" max="${hoy()}"></label>
+  ${ya?'<div class="notice"><span>Ya pasaste lista este día. Si cambias algo, se corrige la asistencia.</span></div>':''}
+  <span class="muted" style="font-size:.85rem">Toca a quien faltó. Vinieron ${n} de ${data.alumnos.length}.</span>
+  <div class="list">${data.alumnos.map(a=>`
+    <button class="roll ${view.pres[a.id]?'on':''}" data-a="pres" data-id="${a.id}" aria-pressed="${!!view.pres[a.id]}">
+      <span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+      <span class="name">${esc(a.nombre)}</span><span class="st">${view.pres[a.id]?'Vino':'Faltó'}</span>
+    </button>`).join('')}</div>
+  <button class="b-main" data-a="pase-si">Guardar asistencia</button>`;
+}
+function presDe(f){const p={};data.alumnos.forEach(a=>{const l=cur(a).lista||{};p[a.id]=f in l?l[f]:true});return p}
 
 function renderEditar(a){
   const m=cur(a);
@@ -347,12 +400,22 @@ function renderEditar(a){
   <section class="card">
     <h2>Temas vistos</h2>
     <div class="temas">${m.temas.length?m.temas.map((t,i)=>`<span class="chip c-plain">${esc(t)}<button data-a="quitar-tema" data-i="${i}" aria-label="Quitar ${esc(t)}">×</button></span>`).join(''):'<span class="muted">Aún no hay temas este mes.</span>'}</div>
-    <form class="row" data-form="tema" style="flex-wrap:nowrap"><input id="f-tema" placeholder="Ej. Verbo to be, Animales…"><button class="b-main" type="submit">Agregar</button></form>
+    <form class="row" data-form="tema" style="flex-wrap:nowrap"><input id="f-tema" placeholder="Escribe un tema o toca uno de abajo"><button class="b-main" type="submit">Agregar</button></form>
+    ${(()=>{const usados=[...new Set(data.alumnos.flatMap(x=>x.meses.flatMap(mm=>mm.temas)))];
+      const sug=[...new Set([...(TEMAS[a.nivel]||[]),...usados])].filter(t=>!m.temas.includes(t));
+      return sug.length?`<span class="muted" style="font-size:.8rem;font-weight:700">Sugeridos para ${a.nivel} y usados antes</span>
+      <div class="sug">${sug.map(t=>`<button data-a="tema-sug" data-t="${esc(t)}">+ ${esc(t)}</button>`).join('')}</div>`:''})()}
+  </section>
+
+  <section class="card">
+    <div class="row between"><h2>Para practicar en casa</h2>${m.practicaFecha?`<span class="muted" style="font-size:.8rem">Cambiado el ${fechaTxt(m.practicaFecha)}</span>`:''}</div>
+    <textarea id="f-practica" data-f="practica" placeholder="Ej. Repasar los colores con objetos de la casa. Cantar la canción de los días de la semana.">${esc(m.practica)}</textarea>
+    <span class="muted" style="font-size:.8rem">Cámbialo cada semana si quieres; los papás lo ven en su link.</span>
   </section>
 
   <section class="card">
     <h2>Mensaje para los papás</h2>
-    <textarea id="f-coment" data-f="comentario" placeholder="Cómo le fue este mes y qué practicar en casa">${esc(m.comentario)}</textarea>
+    <textarea id="f-coment" data-f="comentario" placeholder="Cómo le fue este mes">${esc(m.comentario)}</textarea>
   </section>
 
   ${view.confirm==='borrar'?`<div class="confirm">¿Borrar a ${esc(a.nombre)} y todo su historial?<span class="row"><button class="b-danger b-sm" data-a="borrar-si">Sí, borrar</button><button class="b-ghost b-sm" data-a="cancel">Cancelar</button></span></div>`
@@ -362,6 +425,19 @@ function stepper(label,f,v,extra){
   return `<label class="f">${label}<span class="stepper"><button type="button" data-a="step" data-f="${f}" data-d="-1" aria-label="Menos">−</button><output>${v}</output><button type="button" data-a="step" data-f="${f}" data-d="1" aria-label="Más">+</button><span class="muted" style="font-weight:600">${extra}</span></span></label>`;
 }
 
+function logros(a){
+  const m=cur(a),p=prev(a),L=[];
+  if(a.meses.length===1)L.push(['🎒','¡Bienvenido a clases!']);
+  if(m.clases>0&&m.asist>=m.clases)L.push(['📅','Asistencia perfecta']);
+  let racha=0;for(let i=a.meses.length-1;i>=0;i--){const x=a.meses[i];if(x.tareasTot>0&&x.tareas>=x.tareasTot)racha++;else break}
+  if(racha>=2)L.push(['🔥',racha+' meses con todas sus tareas']);else if(racha===1)L.push(['✅','Entregó todas sus tareas']);
+  const sub=p?SKILLS.filter(s=>m[s.k]>p[s.k]).length:0;
+  if(sub)L.push(['🚀',sub===1?'Subió en una habilidad':'Subió en '+sub+' habilidades']);
+  SKILLS.filter(s=>m[s.k]===5).forEach(s=>L.push(['⭐','Excelente en '+s.n]));
+  if(m.stickers>=10)L.push(['🏆','Coleccionista de stickers']);
+  return L;
+}
+
 function renderPapas(a){
   const m=cur(a),p=prev(a),li=LEVELS.indexOf(a.nivel);
   const hist=a.meses.slice(-6);
@@ -369,9 +445,9 @@ function renderPapas(a){
   ${compartido?'':`<div class="preview-bar"><span>Vista previa: así lo verán los papás</span>
     <span class="row" style="gap:6px"><button data-a="compartir">Compartir con papás</button><button data-a="editar">Volver a editar</button></span></div>`}
   ${!compartido&&view.link?`<section class="card">
-    <h2>Link para los papás de ${esc(a.nombre)}</h2>
-    <input id="f-link" readonly value="${esc(view.link)}">
-    <div class="row"><button class="b-main b-sm" data-a="copiar">Copiar link</button>${view.copiado?'<span class="chip c-ok">¡Copiado!</span>':''}</div>
+    <h2>Mensaje para los papás de ${esc(a.nombre)}</h2>
+    <textarea id="f-link" readonly style="min-height:110px">${esc(mensaje(a))}</textarea>
+    <div class="row"><button class="b-main b-sm" data-a="compartir">Compartir</button><button class="b-ghost b-sm" data-a="copiar">Copiar mensaje</button>${view.copiado?'<span class="chip c-ok">¡Copiado!</span>':''}</div>
     <span class="muted" style="font-size:.82rem">${conLinkFijo()?`Link fijo: solo muestra la boleta de ${esc(a.nombre)} y se actualiza solo. Mándalo una vez.`
       :`Solo muestra la boleta de ${esc(a.nombre)} tal como está hoy. Si cambias algo, manda un link nuevo.`}</span>
   </section>`:''}
@@ -380,6 +456,12 @@ function renderPapas(a){
       <div><div class="sub" style="text-transform:capitalize">Reporte de ${mesTxt(m.mes)}</div><h1>${esc(a.nombre)}</h1><div class="sub">${a.edad} años · Clases de Inglés</div></div></div>
     <div class="ladder">${LEVELS.map((l,i)=>`<div class="${i<li?'done':i===li?'now':''}">${l}</div>`).join('')}</div>
   </section>
+
+  ${(()=>{const L=logros(a);return L.length?`<section class="card"><h2>Logros del mes</h2>
+    <div class="badges">${L.map(([e,t])=>`<div class="badge"><span aria-hidden="true">${e}</span><span>${esc(t)}</span></div>`).join('')}</div></section>`:''})()}
+
+  ${m.practica?`<section class="card"><div class="row between"><h2>Para practicar en casa</h2>${m.practicaFecha?`<span class="muted" style="font-size:.8rem">${fechaTxt(m.practicaFecha)}</span>`:''}</div>
+    <div class="practica">${esc(m.practica)}</div></section>`:''}
 
   <section class="card">
     <h2>Cómo va en cada habilidad</h2>
@@ -412,6 +494,9 @@ function renderPapas(a){
   <p class="foot">Reporte generado por la teacher</p>`;
 }
 
+const mensaje=a=>(conLinkFijo()?`Hola 👋 Aquí pueden ver el avance de ${a.nombre} en sus clases de inglés. Este link se actualiza solo, guárdenlo:`
+  :`Hola 👋 Aquí pueden ver el reporte de inglés de ${a.nombre} de este mes:`)+'\n'+view.link;
+
 app.addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=find(view.id), act=b.dataset.a;
@@ -421,8 +506,8 @@ app.addEventListener('click',e=>{
     case 'lista': view={screen:'lista',id:null,confirm:null};break;
     case 'papas': view.screen='papas';view.link=null;break;
     case 'compartir': view.link=conLinkFijo()?linkFijo(a):linkPapas(a);view.copiado=false;
-      navigator.share?.({title:'Reporte de '+a.nombre,text:'Reporte de inglés de '+a.nombre,url:view.link}).catch(()=>{});break;
-    case 'copiar': navigator.clipboard?.writeText(view.link).then(()=>{view.copiado=true;const y=window.scrollY;render();window.scrollTo?.(0,y)})
+      navigator.share?.({title:'Reporte de inglés de '+a.nombre,text:mensaje(a)}).catch(()=>{});break;
+    case 'copiar': navigator.clipboard?.writeText(mensaje(a)).then(()=>{view.copiado=true;const y=window.scrollY;render();window.scrollTo?.(0,y)})
       .catch(()=>document.getElementById('f-link')?.select());
       if(!navigator.clipboard)document.getElementById('f-link')?.select();return;
     case 'editar': view.screen='editar';break;
@@ -432,9 +517,9 @@ app.addEventListener('click',e=>{
     case 'cancel': view.confirm=null;break;
     case 'blanco': case 'mes': case 'borrar': view.confirm=act;break;
     case 'blanco-si': data={ejemplo:false,alumnos:[]};save();break;
-    case 'mes-si': {const nm=nextMes(mesActual());data.alumnos.forEach(x=>{const c=cur(x);x.meses.push({...c,mes:nm,asist:0,tareas:0,stickers:0,temas:[],comentario:''})});save();view.confirm=null;break}
+    case 'mes-si': {const nm=nextMes(mesActual());data.alumnos.forEach(x=>{const c=cur(x);x.meses.push({...c,mes:nm,asist:0,tareas:0,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{}})});save();view.confirm=null;break}
     case 'nuevo': {const n={id:uid(),nombre:'',edad:8,nivel:'Starter',color:COLORS[data.alumnos.length%COLORS.length],
-      token:tok(),meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:''}]};
+      token:tok(),meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{}}]};
       data.alumnos.push(n);save();view={screen:'editar',id:n.id,confirm:null};break}
     case 'borrar-si': if(conLinkFijo())fb.fs.deleteDoc(docBoleta(a.token)).catch(()=>{});
       data.alumnos=data.alumnos.filter(x=>x.id!==view.id);save();view={screen:'lista',id:null,confirm:null};break;
@@ -443,14 +528,25 @@ app.addEventListener('click',e=>{
       if(f==='asist')v=Math.min(v,m.clases);if(f==='tareas')v=Math.min(v,m.tareasTot);
       m[f]=v;if(f==='clases')m.asist=Math.min(m.asist,v);if(f==='tareasTot')m.tareas=Math.min(m.tareas,v);save();break}
     case 'quitar-tema': cur(a).temas.splice(+b.dataset.i,1);save();break;
+    case 'tema-sug': cur(a).temas.push(b.dataset.t);save();break;
+    case 'pase': view={screen:'pase',id:null,confirm:null,fecha:hoy(),pres:presDe(hoy())};break;
+    case 'pres': view.pres[b.dataset.id]=!view.pres[b.dataset.id];break;
+    case 'pase-si': {const f=view.fecha;let n=0;
+      data.alumnos.forEach(x=>{const m=cur(x),now=!!view.pres[x.id];m.lista??={};const before=m.lista[f];
+        if(now&&before!==true)m.asist++;if(!now&&before===true)m.asist--;
+        m.lista[f]=now;m.asist=Math.max(0,m.asist);if(m.asist>m.clases)m.clases=m.asist;if(now)n++});
+      save();view={screen:'lista',id:null,confirm:null,msg:`Asistencia del ${fechaTxt(f)} guardada: vinieron ${n} de ${data.alumnos.length}.`};break}
     default: return;
   }
-  const y=window.scrollY;const keep=['skill','step','quitar-tema','borrar','cancel','mes','blanco','compartir'].includes(act);
+  const y=window.scrollY;const keep=['skill','step','quitar-tema','tema-sug','pres','borrar','cancel','mes','blanco','compartir'].includes(act);
   render();if(keep)window.scrollTo?.(0,y);
 });
 app.addEventListener('input',e=>{
-  const f=e.target.dataset.f;const a=find(view.id);if(!f||!a)return;
+  const f=e.target.dataset.f;
+  if(f==='fecha'&&view.screen==='pase'){if(e.target.value){view.fecha=e.target.value;view.pres=presDe(view.fecha);render()}return}
+  const a=find(view.id);if(!f||!a)return;
   if(f==='comentario')cur(a).comentario=e.target.value;
+  else if(f==='practica'){cur(a).practica=e.target.value;cur(a).practicaFecha=hoy()}
   else if(f==='edad')a.edad=+e.target.value||a.edad;
   else a[f]=e.target.value;
   if(f==='nombre'){const h=app.querySelector('header h1');if(h)h.textContent=a.nombre||'Nuevo alumno';const av=app.querySelector('header .av');if(av)av.textContent=a.nombre[0]||'?'}

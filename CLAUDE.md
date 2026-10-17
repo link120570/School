@@ -21,7 +21,7 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
   `dias[]` ('lun'…'dom'), `horaIni`, `horaFin` (HH:MM)
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
   `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`,
-  `practica` (texto para practicar en casa), `practicaFecha` (AAAA-MM-DD), `lista` ({'AAAA-MM-DD': true/false} del pase de lista)
+  `practica` (texto para practicar en casa), `practicaFecha` (AAAA-MM-DD), `meta` (meta para el próximo mes), `lista` ({'AAAA-MM-DD': true/false} del pase de lista)
 - El pase de lista solo incluye a quien le toca ese día (o no tiene días marcados); suma o corrige `asist` según la fecha; `lista` no se sube a Firebase.
 - Los logros de la boleta se calculan solos (función `logros`), no se guardan.
 - La app ya no registra pagos (se quitó `pagado` con migración).

@@ -16,7 +16,8 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<!-- Las fuentes cargan sin bloquear: si Google Fonts tarda o no responde, la app se muestra igual con letras del sistema -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" media="print" onload="this.media='all'">
 <style>
 /* Layout: una columna tipo app de celular (máx 560px); panel de la maestra → ficha editable → boleta para papás */
 :root{

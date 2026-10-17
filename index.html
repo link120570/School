@@ -157,6 +157,21 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:
 </head>
 <body>
 <div id="app"></div>
+<script>
+// Si algo falla, mostrarlo en pantalla en lugar de dejarla en blanco (va aparte para atrapar también errores de sintaxis)
+function falla(msg){
+  var app=document.getElementById('app');if(!app)return;
+  var t=String(msg||'Error desconocido').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});
+  var html='<section class="card" style="border-color:var(--warn)"><h2>Algo falló al abrir la app</h2>'+
+    '<p class="muted" style="margin:0">Toma captura de esta pantalla y mándasela a quien te ayuda con la app.</p>'+
+    '<code style="font-size:.8rem;word-break:break-word;background:var(--soft);padding:8px;border-radius:8px">'+t+'</code>'+
+    '<code style="font-size:.7rem;word-break:break-word;color:var(--muted)">'+navigator.userAgent.replace(/[<>&"]/g,'')+'</code>'+
+    '<button class="b-main" onclick="location.reload()">Volver a intentar</button></section>';
+  if(app.children.length&&!app.querySelector('[data-falla]'))app.insertAdjacentHTML('afterbegin','<div data-falla>'+html+'</div>');
+  else if(!app.children.length)app.innerHTML=html;
+}
+window.addEventListener('error',function(e){falla(e.message+(e.lineno?' (línea '+e.lineno+')':''))});
+</script>
 
 <script>
 const KEY='progreso-ingles-v1';
@@ -278,13 +293,14 @@ function sincronizar(){
 }
 const tok=()=>{const b=new Uint8Array(15);crypto.getRandomValues(b);return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_')};
 
-// compartido: null = panel de la maestra; 'cargando'; false = link inválido; objeto = boleta a mostrar
+// compartido: null = panel de la maestra; 'cargando'; 'error' = no se pudo leer; false = link inválido; objeto = boleta a mostrar
 let compartido=null;
 if(location.hash.startsWith('#r='))compartido=leerLink(location.hash.slice(3));
 else if(location.hash.startsWith('#p=')){
   compartido='cargando';
-  cargarFirebase().then(()=>fb.fs.getDoc(docBoleta(location.hash.slice(3))))
-    .then(d=>{compartido=d.exists()?limpiar(d.data()):false}).catch(()=>{compartido=false}).finally(()=>render());
+  const limite=new Promise((_,no)=>setTimeout(()=>no(new Error('Tardó demasiado')),15000));
+  Promise.race([cargarFirebase().then(()=>fb.fs.getDoc(docBoleta(location.hash.slice(3)))),limite])
+    .then(d=>{compartido=d.exists()?limpiar(d.data()):false}).catch(e=>{compartido='error';view.err=e?.code||e?.message||''}).finally(()=>render());
 }
 addEventListener('hashchange',()=>location.reload());
 
@@ -305,7 +321,13 @@ const find=id=>data.alumnos.find(a=>a.id===id);
 const star=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 6 6.5.8-4.8 4.5 1.2 6.5L12 17.3l-5.8 3.1 1.2-6.5L2.6 9.4l6.5-.8z" fill="${on?'var(--hi)':'var(--line)'}"/></svg>`;
 
 function render(){
-  if(compartido==='cargando'){app.innerHTML='<p class="foot">Cargando reporte…</p>';return}
+  try{pintar()}catch(e){app.innerHTML='';falla(e.message)}
+}
+function pintar(){
+  if(compartido==='cargando'){app.innerHTML='<section class="card"><h2>Cargando reporte…</h2><p class="muted" style="margin:0">Un momento.</p></section>';return}
+  if(compartido==='error'){app.innerHTML=`<section class="card"><h2>No se pudo cargar el reporte</h2>
+    <p class="muted" style="margin:0">Revisa tu internet e intenta de nuevo.</p>${view.err?`<code style="font-size:.75rem;color:var(--muted)">${esc(view.err)}</code>`:''}
+    <button class="b-main" onclick="location.reload()">Volver a intentar</button></section>`;return}
   if(compartido!==null){
     document.title=compartido?'Reporte de '+compartido.nombre:'Progreso de Inglés';
     app.innerHTML=compartido?renderPapas(compartido):`<section class="card"><h2>Este link no funciona</h2><p class="muted" style="margin:0">Pídele a la teacher que te lo mande de nuevo.</p></section>`;

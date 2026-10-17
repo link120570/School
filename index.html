@@ -310,7 +310,7 @@ if(!data||!Array.isArray(data.alumnos))data=sample();
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}sincronizar()};
 // Migraciones: token para links fijos; se quitó el registro de pagos; práctica y pase de lista por mes; días y horario; avatar
 if(compartido===null&&data.alumnos.some(a=>!a.token||!a.dias||a.avatar==null||a.meses.some(m=>'pagado' in m||!m.lista||m.meta==null))){
-  data.alumnos.forEach(a=>{a.token??=tok();a.avatar??='';a.dias??=[];a.horaIni??='';a.horaFin??='';a.meses.forEach(m=>{delete m.pagado;m.practica??='';m.practicaFecha??='';m.lista??={};m.meta??=''})});save()}
+  data.alumnos.forEach(a=>{if(a.token==null)a.token=tok();if(a.avatar==null)a.avatar='';if(a.dias==null)a.dias=[];if(a.horaIni==null)a.horaIni='';if(a.horaFin==null)a.horaFin='';a.meses.forEach(m=>{delete m.pagado;if(m.practica==null)m.practica='';if(m.practicaFecha==null)m.practicaFecha='';if(m.lista==null)m.lista={};if(m.meta==null)m.meta=''})});save()}
 let view={screen:'lista',id:null,confirm:null};
 const app=document.getElementById('app');
 const cur=a=>a.meses[a.meses.length-1];
@@ -629,7 +629,7 @@ app.addEventListener('click',e=>{
     case 'pase': view={screen:'pase',id:null,confirm:null,fecha:hoy(),pres:presDe(hoy())};break;
     case 'pres': view.pres[b.dataset.id]=!view.pres[b.dataset.id];break;
     case 'pase-si': {const f=view.fecha;let n=0;
-      data.alumnos.filter(x=>view.pres[x.id]!=null).forEach(x=>{const m=cur(x),now=view.pres[x.id];m.lista??={};const before=m.lista[f];
+      data.alumnos.filter(x=>view.pres[x.id]!=null).forEach(x=>{const m=cur(x),now=view.pres[x.id];if(m.lista==null)m.lista={};const before=m.lista[f];
         if(now&&before!==true)m.asist++;if(!now&&before===true)m.asist--;
         m.lista[f]=now;m.asist=Math.max(0,m.asist);if(m.asist>m.clases)m.clases=m.asist;if(now)n++});
       save();view={screen:'lista',id:null,confirm:null,msg:`Asistencia del ${fechaTxt(f)} guardada: vinieron ${n} de ${data.alumnos.filter(x=>view.pres[x.id]!=null).length}.`};break}

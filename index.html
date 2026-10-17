@@ -131,6 +131,9 @@ label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:
 .roll .st{font-size:.85rem;font-weight:800;padding:6px 12px;border-radius:999px;background:var(--warn-bg);color:var(--warn);min-width:82px;text-align:center}
 .roll.on{border-color:var(--ok)}
 .roll.on .st{background:var(--ok-bg);color:var(--ok)}
+.semana{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.semana>*{padding:9px 0;text-align:center;border-radius:9px;background:var(--soft);border:1.5px solid var(--line);font-weight:800;font-size:.8rem;color:var(--muted);min-width:0}
+.semana>.on{background:var(--s3);border-color:var(--s3);color:#fff}
 .badges{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .badge{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:12px;padding:10px;font-weight:800;font-size:.85rem;line-height:1.2}
 .badge span:first-child{font-size:1.6rem;line-height:1}
@@ -162,6 +165,14 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const uid=()=>Math.random().toString(36).slice(2,9);
 const pad=n=>String(n).padStart(2,'0');
 const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+// Días de clase: clave, nombre, corto, número de Date.getDay()
+const DIAS=[['lun','lunes','Lun',1],['mar','martes','Mar',2],['mie','miércoles','Mié',3],['jue','jueves','Jue',4],['vie','viernes','Vie',5],['sab','sábado','Sáb',6],['dom','domingo','Dom',0]];
+const diaDe=f=>{const[y,mm,dd]=f.split('-').map(Number);const n=new Date(y,mm-1,dd).getDay();return DIAS.find(d=>d[3]===n)[0]};
+const toca=(a,f)=>!a.dias?.length||a.dias.includes(diaDe(f));
+const listaY=xs=>xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' y '+xs[xs.length-1];
+const diasTxt=a=>{const t=listaY(DIAS.filter(d=>a.dias.includes(d[0])).map(d=>d[1]));return t[0].toUpperCase()+t.slice(1)};
+const horaTxt=h=>{let[hh,mi]=h.split(':').map(Number);const pm=hh>=12;hh=hh%12||12;return hh+':'+pad(mi)+(pm?' p.m.':' a.m.')};
+const horarioTxt=a=>a.horaIni&&a.horaFin?horaTxt(a.horaIni)+' a '+horaTxt(a.horaFin):a.horaIni?horaTxt(a.horaIni):'';
 const fechaTxt=f=>{const[,mm,dd]=f.split('-');return +dd+' de '+MESES[+mm-1]};
 // Temas sugeridos por nivel (la maestra también ve los que ya ha usado antes)
 const TEMAS={
@@ -176,7 +187,8 @@ function mk(nombre,edad,nivel,base,temas,coment,ci){
     return {mes,...sk,asist:[7,8,6][i]+(base[0]>2?1:0),clases:8,tareas:[5,6,7][i]-(base[3]<2?1:0),tareasTot:8,
       stickers:[3,4,5][i]+(base[1]>2?1:0),temas:temas[i]||[],comentario:i==2?coment:''};
   });
-  return {id:uid(),nombre,edad,nivel,color:COLORS[ci%COLORS.length],meses};
+  return {id:uid(),nombre,edad,nivel,color:COLORS[ci%COLORS.length],meses,
+    dias:ci%2?['mar','jue']:['lun','mie'],horaIni:ci<4?'16:00':'17:00',horaFin:ci<4?'17:00':'18:00'};
 }
 function sample(){
   return {ejemplo:true,alumnos:[
@@ -190,7 +202,7 @@ function sample(){
   ]};
 }
 // Link para papás: la boleta de un alumno va dentro del link (#r=...), no se guarda en ningún servidor
-const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,meses:a.meses.slice(-6).map(({lista,...m})=>m)});
+const boleta=a=>({nombre:a.nombre,edad:a.edad,nivel:a.nivel,color:a.color,dias:a.dias||[],horaIni:a.horaIni||'',horaFin:a.horaFin||'',meses:a.meses.slice(-6).map(({lista,...m})=>m)});
 function linkPapas(a){
   const b=btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(boleta(a))))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   return location.origin+location.pathname+'#r='+b;
@@ -210,7 +222,9 @@ function limpiar(o){
       SKILLS.forEach(k=>r[k.k]=n(m[k.k],1,5));return r});
     if(!meses.length)return false;
     return {nombre:String(o.nombre??''),edad:n(o.edad,0,99),nivel:LEVELS.includes(o.nivel)?o.nivel:LEVELS[0],
-      color:/^#[0-9a-f]{6}$/i.test(o.color)?o.color:COLORS[0],meses};
+      color:/^#[0-9a-f]{6}$/i.test(o.color)?o.color:COLORS[0],meses,
+      dias:Array.isArray(o.dias)?DIAS.map(d=>d[0]).filter(k=>o.dias.includes(k)):[],
+      horaIni:/^\d{2}:\d{2}$/.test(o.horaIni)?o.horaIni:'',horaFin:/^\d{2}:\d{2}$/.test(o.horaFin)?o.horaFin:''};
   }catch(e){return false}
 }
 
@@ -261,9 +275,9 @@ let data;
 try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!data||!Array.isArray(data.alumnos))data=sample();
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}sincronizar()};
-// Migraciones: token para links fijos; se quitó el registro de pagos; práctica y pase de lista por mes
-if(compartido===null&&data.alumnos.some(a=>!a.token||a.meses.some(m=>'pagado' in m||!m.lista))){
-  data.alumnos.forEach(a=>{a.token??=tok();a.meses.forEach(m=>{delete m.pagado;m.practica??='';m.practicaFecha??='';m.lista??={}})});save()}
+// Migraciones: token para links fijos; se quitó el registro de pagos; práctica y pase de lista por mes; días y horario
+if(compartido===null&&data.alumnos.some(a=>!a.token||!a.dias||a.meses.some(m=>'pagado' in m||!m.lista))){
+  data.alumnos.forEach(a=>{a.token??=tok();a.dias??=[];a.horaIni??='';a.horaFin??='';a.meses.forEach(m=>{delete m.pagado;m.practica??='';m.practicaFecha??='';m.lista??={}})});save()}
 let view={screen:'lista',id:null,confirm:null};
 const app=document.getElementById('app');
 const cur=a=>a.meses[a.meses.length-1];
@@ -300,7 +314,7 @@ function renderLista(){
     ${view.confirm==='blanco'?`<span class="row"><button class="b-danger b-sm" data-a="blanco-si">Sí, borrar</button><button class="b-ghost b-sm" data-a="cancel">No</button></span>`
     :`<button class="b-ghost b-sm" data-a="blanco">Empezar en blanco</button>`}</div>`:''}
   ${view.msg?`<div class="notice"><span>${esc(view.msg)}</span></div>`:''}
-  ${al.length?`<button class="b-hi" data-a="pase">Pase de lista de hoy${al.every(a=>hoy() in (cur(a).lista||{}))?' ✓':''}</button>`:''}
+  ${al.length?`<button class="b-hi" data-a="pase">Pase de lista de hoy · ${al.filter(a=>toca(a,hoy())).length} con clase${al.some(a=>hoy() in (cur(a).lista||{}))?' ✓':''}</button>`:''}
   <div class="stats">
     <div class="stat"><b>${al.length}</b><span>Alumnos</span></div>
     <div class="stat"><b>${asis}%</b><span>Asistencia</span></div>
@@ -315,6 +329,7 @@ function renderLista(){
         <span class="minibar">${SKILLS.map(s=>`<i style="background:linear-gradient(90deg,${s.c} ${m[s.k]*20}%,var(--line) ${m[s.k]*20}%)"></i>`).join('')}</span>
         <span class="row" style="gap:6px">
           <span class="chip c-plain">${m.asist}/${m.clases} clases</span>
+          ${a.dias?.length?`<span class="chip c-plain">${DIAS.filter(d=>a.dias.includes(d[0])).map(d=>d[2]).join(' · ')}${a.horaIni?' · '+horaTxt(a.horaIni):''}</span>`:''}
         </span>
       </span>
     </button>`}).join('')}
@@ -340,21 +355,27 @@ function renderLista(){
 
 function renderPase(){
   const f=view.fecha, ya=data.alumnos.some(a=>f in (cur(a).lista||{}));
-  const n=data.alumnos.filter(a=>view.pres[a.id]).length;
+  const en=data.alumnos.filter(a=>view.pres[a.id]!=null), fuera=data.alumnos.filter(a=>view.pres[a.id]==null);
+  const n=en.filter(a=>view.pres[a.id]).length;
   return `
   <button class="back" data-a="lista">← Panel</button>
-  <header><div class="eyebrow">Pase de lista</div><h1>Clase del ${fechaTxt(f)}</h1></header>
+  <header><div class="eyebrow">Pase de lista</div><h1>Clase del ${DIAS.find(d=>d[0]===diaDe(f))[1]} ${fechaTxt(f)}</h1></header>
   <label class="f">Fecha de la clase<input type="date" id="f-fecha" data-f="fecha" value="${f}" max="${hoy()}"></label>
   ${ya?'<div class="notice"><span>Ya pasaste lista este día. Si cambias algo, se corrige la asistencia.</span></div>':''}
-  <span class="muted" style="font-size:.85rem">Toca a quien faltó. Vinieron ${n} de ${data.alumnos.length}.</span>
-  <div class="list">${data.alumnos.map(a=>`
+  ${en.length?`<span class="muted" style="font-size:.85rem">Toca a quien faltó. Vinieron ${n} de ${en.length}.</span>`
+    :'<div class="notice"><span>Nadie tiene clase este día. Si alguien vino, agrégalo abajo.</span></div>'}
+  <div class="list">${en.map(a=>`
     <button class="roll ${view.pres[a.id]?'on':''}" data-a="pres" data-id="${a.id}" aria-pressed="${!!view.pres[a.id]}">
       <span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
       <span class="name">${esc(a.nombre)}</span><span class="st">${view.pres[a.id]?'Vino':'Faltó'}</span>
     </button>`).join('')}</div>
+  ${fuera.length?`<span class="eyebrow">Hoy no les toca</span>
+  <div class="list">${fuera.map(a=>`<div class="roll"><span class="av" style="background:${a.color}">${esc(a.nombre[0]||'?')}</span>
+    <span class="name">${esc(a.nombre)}</span><button class="b-ghost b-sm" data-a="pres" data-id="${a.id}">+ Vino</button></div>`).join('')}</div>`:''}
   <button class="b-main" data-a="pase-si">Guardar asistencia</button>`;
 }
-function presDe(f){const p={};data.alumnos.forEach(a=>{const l=cur(a).lista||{};p[a.id]=f in l?l[f]:true});return p}
+// true = vino, false = faltó, null = no le toca ese día (no se registra)
+function presDe(f){const p={};data.alumnos.forEach(a=>{const l=cur(a).lista||{};p[a.id]=f in l?l[f]:toca(a,f)?true:null});return p}
 
 function renderEditar(a){
   const m=cur(a);
@@ -375,6 +396,16 @@ function renderEditar(a){
     <label class="f">Nivel
       <select id="f-nivel" data-f="nivel">${LEVELS.map(l=>`<option ${l===a.nivel?'selected':''}>${l}</option>`).join('')}</select>
     </label>
+  </section>
+
+  <section class="card">
+    <h2>Días y horario de clase</h2>
+    <div class="semana" role="group" aria-label="Días de clase">${DIAS.map(d=>`<button class="${a.dias.includes(d[0])?'on':''}" data-a="dia" data-d="${d[0]}" aria-pressed="${a.dias.includes(d[0])}">${d[2]}</button>`).join('')}</div>
+    <div class="grid2">
+      <label class="f">Empieza<input type="time" data-f="horaIni" value="${a.horaIni}"></label>
+      <label class="f">Termina<input type="time" data-f="horaFin" value="${a.horaFin}"></label>
+    </div>
+    <span class="muted" style="font-size:.85rem">${a.dias.length?diasTxt(a):'Toca los días que viene a clase.'}</span>
   </section>
 
   <section class="card">
@@ -460,6 +491,10 @@ function renderPapas(a){
   ${(()=>{const L=logros(a);return L.length?`<section class="card"><h2>Logros del mes</h2>
     <div class="badges">${L.map(([e,t])=>`<div class="badge"><span aria-hidden="true">${e}</span><span>${esc(t)}</span></div>`).join('')}</div></section>`:''})()}
 
+  ${a.dias.length?`<section class="card"><div class="row between"><h2>Sus clases</h2>${horarioTxt(a)?`<b>${horarioTxt(a)}</b>`:''}</div>
+    <div class="semana">${DIAS.map(d=>`<div class="${a.dias.includes(d[0])?'on':''}">${d[2]}</div>`).join('')}</div>
+    <span class="muted" style="font-size:.85rem">${diasTxt(a)}${horarioTxt(a)?' de '+horarioTxt(a):''}</span></section>`:''}
+
   ${m.practica?`<section class="card"><div class="row between"><h2>Para practicar en casa</h2>${m.practicaFecha?`<span class="muted" style="font-size:.8rem">${fechaTxt(m.practicaFecha)}</span>`:''}</div>
     <div class="practica">${esc(m.practica)}</div></section>`:''}
 
@@ -519,7 +554,7 @@ app.addEventListener('click',e=>{
     case 'blanco-si': data={ejemplo:false,alumnos:[]};save();break;
     case 'mes-si': {const nm=nextMes(mesActual());data.alumnos.forEach(x=>{const c=cur(x);x.meses.push({...c,mes:nm,asist:0,tareas:0,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{}})});save();view.confirm=null;break}
     case 'nuevo': {const n={id:uid(),nombre:'',edad:8,nivel:'Starter',color:COLORS[data.alumnos.length%COLORS.length],
-      token:tok(),meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{}}]};
+      token:tok(),dias:[],horaIni:'',horaFin:'',meses:[{mes:mesActual(),speaking:1,listening:1,reading:1,writing:1,asist:0,clases:8,tareas:0,tareasTot:8,stickers:0,temas:[],comentario:'',practica:'',practicaFecha:'',lista:{}}]};
       data.alumnos.push(n);save();view={screen:'editar',id:n.id,confirm:null};break}
     case 'borrar-si': if(conLinkFijo())fb.fs.deleteDoc(docBoleta(a.token)).catch(()=>{});
       data.alumnos=data.alumnos.filter(x=>x.id!==view.id);save();view={screen:'lista',id:null,confirm:null};break;
@@ -528,17 +563,18 @@ app.addEventListener('click',e=>{
       if(f==='asist')v=Math.min(v,m.clases);if(f==='tareas')v=Math.min(v,m.tareasTot);
       m[f]=v;if(f==='clases')m.asist=Math.min(m.asist,v);if(f==='tareasTot')m.tareas=Math.min(m.tareas,v);save();break}
     case 'quitar-tema': cur(a).temas.splice(+b.dataset.i,1);save();break;
+    case 'dia': {const d=b.dataset.d;a.dias=a.dias.includes(d)?a.dias.filter(x=>x!==d):DIAS.map(x=>x[0]).filter(x=>x===d||a.dias.includes(x));save();break}
     case 'tema-sug': cur(a).temas.push(b.dataset.t);save();break;
     case 'pase': view={screen:'pase',id:null,confirm:null,fecha:hoy(),pres:presDe(hoy())};break;
     case 'pres': view.pres[b.dataset.id]=!view.pres[b.dataset.id];break;
     case 'pase-si': {const f=view.fecha;let n=0;
-      data.alumnos.forEach(x=>{const m=cur(x),now=!!view.pres[x.id];m.lista??={};const before=m.lista[f];
+      data.alumnos.filter(x=>view.pres[x.id]!=null).forEach(x=>{const m=cur(x),now=view.pres[x.id];m.lista??={};const before=m.lista[f];
         if(now&&before!==true)m.asist++;if(!now&&before===true)m.asist--;
         m.lista[f]=now;m.asist=Math.max(0,m.asist);if(m.asist>m.clases)m.clases=m.asist;if(now)n++});
-      save();view={screen:'lista',id:null,confirm:null,msg:`Asistencia del ${fechaTxt(f)} guardada: vinieron ${n} de ${data.alumnos.length}.`};break}
+      save();view={screen:'lista',id:null,confirm:null,msg:`Asistencia del ${fechaTxt(f)} guardada: vinieron ${n} de ${data.alumnos.filter(x=>view.pres[x.id]!=null).length}.`};break}
     default: return;
   }
-  const y=window.scrollY;const keep=['skill','step','quitar-tema','tema-sug','pres','borrar','cancel','mes','blanco','compartir'].includes(act);
+  const y=window.scrollY;const keep=['skill','step','dia','quitar-tema','tema-sug','pres','borrar','cancel','mes','blanco','compartir'].includes(act);
   render();if(keep)window.scrollTo?.(0,y);
 });
 app.addEventListener('input',e=>{

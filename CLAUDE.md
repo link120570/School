@@ -17,11 +17,12 @@ Panel para capturar el avance mensual de cada alumno y una vista de boleta para 
 - Nunca subir datos reales de alumnos al repositorio (es público).
 
 ## Estructura de datos
-- `alumnos[]`: `id`, `token`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`
+- `alumnos[]`: `id`, `token`, `nombre`, `edad`, `nivel` (Starter, A1, A2, B1), `color`, `meses[]`,
+  `dias[]` ('lun'…'dom'), `horaIni`, `horaFin` (HH:MM)
 - Cada mes: `mes` (AAAA-MM), `speaking`, `listening`, `reading`, `writing` (1 a 5),
   `asist`, `clases`, `tareas`, `tareasTot`, `stickers`, `temas[]`, `comentario`,
   `practica` (texto para practicar en casa), `practicaFecha` (AAAA-MM-DD), `lista` ({'AAAA-MM-DD': true/false} del pase de lista)
-- El pase de lista suma o corrige `asist` según la fecha; `lista` no se sube a Firebase.
+- El pase de lista solo incluye a quien le toca ese día (o no tiene días marcados); suma o corrige `asist` según la fecha; `lista` no se sube a Firebase.
 - Los logros de la boleta se calculan solos (función `logros`), no se guardan.
 - La app ya no registra pagos (se quitó `pagado` con migración).
 
